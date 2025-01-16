@@ -163,7 +163,8 @@ public static class SplatSerializationHelper
 
     public static GaussianCloud LoadSplatFromPly(string filePath)
     {
-
+        using FileStream stream = File.OpenRead(filePath);
+        return LoadSplatFromPly(stream);
     }
 
 
