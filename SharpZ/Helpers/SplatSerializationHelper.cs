@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Diagnostics;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -8,7 +9,8 @@ namespace SharPZ;
 public static class SplatSerializationHelper
 {
     const string PLY_HEADER = "ply";
-    const string SUPPORTED_FORMAT = "format binary_little_endian 1.0";
+    const string FORMAT_MARKER = "format ";
+    const string SUPPORTED_FORMAT = "binary_little_endian 1.0";
     const string ELEMENT_VERTICES_MARKER = "element vertex ";
 
 
@@ -58,6 +60,26 @@ public static class SplatSerializationHelper
         return builder.ToString();
     }
 
+    public static string? GetLine(this BinaryReader reader, string text, bool exactMatch = true)
+    {
+        string curLine;
+
+        do
+        {
+            try
+            {
+                curLine = reader.ReadLine();
+            }
+            catch (EndOfStreamException)
+            {
+                return "";
+            }
+        }
+        while(exactMatch ? curLine != text : !curLine.Contains(text));
+
+        return curLine;
+    }
+
 
     public static void WriteLine(this BinaryWriter writer, string text)
     {
@@ -66,34 +88,30 @@ public static class SplatSerializationHelper
     }
 
 
-    public static void WriteVector3(this BinaryWriter writer, in Vector3 vec)
-    {
-        writer.Write(vec.X);
-        writer.Write(vec.Y);
-        writer.Write(vec.Z);
-    }
-
-    public static void WriteQuaternionWXYZ(this BinaryWriter writer, in Quaternion quat)
-    {
-        writer.Write(quat.W);
-        writer.Write(quat.X);
-        writer.Write(quat.Y);
-        writer.Write(quat.Z);
-    }
-
-
     public static int ValidatePlySplat(BinaryReader reader)
     {
-        string header = reader.ReadLine();
-        if (header != PLY_HEADER)
-            throw new SplatFormatException("The input file doesn't appear to be a ply file.");
+        string? header = reader.GetLine(PLY_HEADER);
+        if (header == null)
+            throw new SplatFormatException("The input file doesn't appear to be a PLY file.");
         
-        string format = reader.ReadLine();
+        #if DEBUG
+        Console.WriteLine($"DEBUG: PLY header: {header}");
+        #endif
+
+        string? formatLine = reader.GetLine(FORMAT_MARKER, false);
+        if (formatLine == null)
+            throw new SplatFormatException("Unable to determine format of PLY file.");
+
+        #if DEBUG
+        Console.WriteLine($"DEBUG: PLY format: {formatLine}");
+        #endif
+
+        string format = formatLine.Substring(FORMAT_MARKER.Length);
         if (format != SUPPORTED_FORMAT)
-            throw new SplatFormatException($"Unsupported ply format: {format}");
+            throw new SplatFormatException($"Only PLY files in the \"{SUPPORTED_FORMAT}\" format can be used, invalid format: {format}");
         
-        string pointCountMarker = reader.ReadLine();
-        if (!pointCountMarker.Contains(ELEMENT_VERTICES_MARKER))
+        string? pointCountMarker = reader.GetLine(ELEMENT_VERTICES_MARKER, false);
+        if (pointCountMarker == null)
             throw new SplatFormatException($"Couldn't determine element vertices from: {pointCountMarker}");
         
         string pointCountStr = pointCountMarker.Substring(ELEMENT_VERTICES_MARKER.Length);
@@ -107,30 +125,6 @@ public static class SplatSerializationHelper
 
         return numPoints;
     }
-
-    // public static void WriteHarmonics(this BinaryWriter writer, in GaussianHarmonics harmonics, int dimensions)
-    // {
-    //     for (int i = 0; i < dimensions; i++)
-    //     {
-    //         Vector3 harmonicVec = new(harmonics[i])
-    //     }
-    // }
-
-
-    // public static GaussianHarmonics ReadHarmonics(this BinaryReader reader, int shDim)
-    // {
-    //     GaussianHarmonics sh = new();
-    //     for (int j = 0; j < shDim; j++)
-    //     {
-    //         Vector3 harmonic = new(
-    //             values[i + shIdx[j]],
-    //             values[i + shIdx[j + shDim]],
-    //             values[i + shIdx[j + 2 * shDim]]);
-            
-    //         sh[j] = harmonic;
-    //     }
-    //     return 
-    // }
 }
 
 
