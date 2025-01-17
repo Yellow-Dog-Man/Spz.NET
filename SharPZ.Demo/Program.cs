@@ -1,4 +1,5 @@
 ﻿using System.IO.Compression;
+using System.Runtime.InteropServices;
 using SharPZ;
 
 namespace SharPZ.Demo;
@@ -7,14 +8,21 @@ class Program
 {
     static void Main(string[] args)
     {
-        // using FileStream spzInput = File.OpenRead("./hornedlizard.spz");
-        // using GZipStream gZip = new(spzInput, CompressionMode.Decompress);
+        string input = "./input.ply";
 
-        // using FileStream uncompressed = File.OpenWrite("./hornedlizard.spzu");
+        if (args.Length > 0)
+            input = Path.GetFullPath(args[0]);
+            
 
-        // gZip.CopyTo(uncompressed);
+        if (!Directory.Exists(Path.GetDirectoryName(input)))
+        {
+            Console.WriteLine("Path doesn't exist!");
+            return;
+        }
+
+        GaussianCloud cloud = GaussianCloud.FromPly(input);
 
 
-        Console.WriteLine(Fixed24.FromFloat(128.99f, 12));
+        cloud.ToPly("./output.ply");
     }
 }
