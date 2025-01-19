@@ -2,29 +2,34 @@ namespace SharPZ;
 
 public readonly struct Fixed24
 {
-    const uint FRACTIONAL_BITS_MASK = 0xff000000;
-    public readonly byte FractionalBits => (byte)((_value & FRACTIONAL_BITS_MASK) >> 24);
-    private readonly int _value;
-
-    public float Float => ((_value & ~FRACTIONAL_BITS_MASK) >> FractionalBits) + (float)(1 << FractionalBits) / (((1 << FractionalBits) - 1) & _value);
-    public int Value => _value & (int)~FRACTIONAL_BITS_MASK;
+    private readonly byte b0;
+    private readonly byte b1;
+    private readonly byte b2;
 
 
-    Fixed24(int value, byte fractionalBits)
+    public Fixed24(float value, int fractionalBits)
     {
-        _value = (fractionalBits << 24) + (int)(value & ~FRACTIONAL_BITS_MASK);
-    }
-
-    public static Fixed24 FromFloat(float x, byte fractionalBits)
-    {
-        int whole = (int)Math.Round(x * (1 << fractionalBits));
-
-        return new(whole, fractionalBits);
+        int fixed32 = (int)Math.Round(value * (1 << fractionalBits));
+        if (fixed32 > 1 << 24)
+            throw new IndexOutOfRangeException($"Fixed24 only supports values up to {1 << 24}, value resulted in: {value}");
+        
+        b0 = (byte)(fixed32 & 0xff);
+        b1 = (byte)((fixed32 >> 8) & 0xff);
+        b2 = (byte)((fixed32 >> 16) & 0xff);
     }
 
 
-    // public override string ToString()
-    // {
-    //     return $"{(_value & ~FRACTIONAL_BITS_MASK) >> FractionalBits}.{((((1 << FractionalBits) - 1) & _value) << FractionalBits) / (1 << FractionalBits)}";
-    // }
+    public readonly float ToFloat(int fractionalBits)
+    {
+        int fixed32 = b0 | (b1 << 8) | (b2 << 16);
+
+        int fractionalScale = 1 << fractionalBits;
+
+        return (fixed32 >> fractionalBits) + (((fractionalScale - 1) & fixed32) / (float)fractionalScale);
+    }
+
+    public override string ToString()
+    {
+        return $"{b0 | (b1 << 8) | (b2 << 16)}";
+    }
 }

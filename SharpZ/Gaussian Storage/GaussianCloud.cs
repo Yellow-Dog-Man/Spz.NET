@@ -4,210 +4,146 @@ using System.Runtime.InteropServices;
 
 namespace SharPZ;
 
-public class GaussianCloud(int capacity, int shDim, bool antialiased = false) : IReadOnlyList<Gaussian>
+
+
+public class GaussianCloud(int capacity, int shDim, bool antialiased = false) : GaussianCollection<Gaussian>(capacity, shDim, antialiased)
 {
-    const string END_HEADER = "end_header";
-    const string FLOAT_PROPERTY_MARKER = "property float ";
-
-
-
-    public Gaussian this[int index]
+    public override bool Compressed => false;
+    public override Gaussian this[int index]
     {
         get => gaussians[index];
         set => gaussians[index] = value;
     }
 
 
-    public int Count => gaussians.Length;
+    protected readonly Gaussian[] gaussians = new Gaussian[capacity];
+
+
+    protected override void CopyToImpl(Gaussian[] array, int arrayIndex) => gaussians.CopyTo(array, arrayIndex);
+    protected override bool ContainsImpl(Gaussian gaussian) => gaussians.Contains(gaussian);
+    protected override IEnumerator<Gaussian> GetTypedEnumeratorImpl() => (IEnumerator<Gaussian>)gaussians.GetEnumerator();
+    protected override IEnumerator GetEnumeratorImpl() => gaussians.GetEnumerator();
+
+}
+
+
+public abstract class GaussianCollection<T>(int capacity, int shDim, bool antialiased = false) : IReadOnlyList<T>
+    where T : unmanaged, IGaussian
+{
+    public abstract T this[int index] { get; set; }
+
+    public virtual bool Compressed { get; }
+
+    public int Count => capacity;
     public bool IsReadOnly => true;
 
 
-    public readonly int ShDegree = SplatSerializationHelper.DegreeForDim(shDim);
-    public readonly bool Antialiased = antialiased;
+    public int ShDegree { get; } = SplatSerializationHelper.DegreeForDim(shDim);
+    public bool Antialiased => antialiased;
 
 
-    private readonly Gaussian[] gaussians = new Gaussian[capacity];
-
-    public bool Contains(Gaussian gaussian) => gaussians.Contains(gaussian);
-
-    public void CopyTo(Gaussian[] array, int arrayIndex) => gaussians.CopyTo(array, arrayIndex);
+    public bool Contains(T gaussian) => ContainsImpl(gaussian);
+    protected abstract bool ContainsImpl(T Gaussian);
 
 
-    IEnumerator<Gaussian> IEnumerable<Gaussian>.GetEnumerator() => (IEnumerator<Gaussian>)gaussians.GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator() => gaussians.GetEnumerator();
-
+    public void CopyTo(T[] array, int arrayIndex) => CopyToImpl(array, arrayIndex);
+    protected abstract void CopyToImpl(T[] array, int arrayIndex);
 
 
-    public static GaussianCloud FromPly(Stream stream)
+    IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetTypedEnumeratorImpl();
+    protected abstract IEnumerator<T> GetTypedEnumeratorImpl();
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumeratorImpl();
+    protected abstract IEnumerator GetEnumeratorImpl();
+}
+
+
+public class PackedGaussianCloud(int capacity, int shDim, int fractionalBits = PackedGaussian.DEFAULT_FRACTIONAL_BITS, bool antialiased = false) : GaussianCollection<PackedGaussian>(capacity, shDim, antialiased)
+{
+    public override bool Compressed => true;
+    public readonly int FractionalBits = fractionalBits;
+
+    public override PackedGaussian this[int index]
     {
-        using BinaryReader reader = new(stream);
-        int numPoints = SplatSerializationHelper.ValidatePlySplat(reader);
-
-        #region Property decoding
-
-        Dictionary<string, int> fields = [];
-
-        int index(string key)
-        {
-            if (!fields.TryGetValue(key, out int value))
-                throw new SplatFormatException($"Attribute was missing: {key}");
-
-            return value;
-        }
-
-
-        for (int i = 0; /*End condition depends on file contents*/ ; i++)
-        {
-            string curLine = reader.ReadLine();
-
-
-            if (curLine == END_HEADER)
-                break;
-
-            if (!curLine.StartsWith(FLOAT_PROPERTY_MARKER))
-                throw new SplatFormatException($"Unsupported property data type: {curLine}");
-
-
-            string name = curLine.Substring(FLOAT_PROPERTY_MARKER.Length);
-            fields.Add(name, i);
-        }
-        int fieldCount = fields.Count;
-
-        
-        Span<int> shIdx = stackalloc int[45];
-
-        for (int i = 0; i < 45; i++)
-        {
-            try
-            {
-                shIdx[i] = index($"f_rest_{i}");
-            }
-            catch (SplatFormatException)
-            {
-                shIdx = shIdx.Slice(0, i);
-                break;
-            }
-        }
-        int shDim = shIdx.Length / 3;
-
-        #endregion
-
-
-
-        #region Splat decoding
-        
-        int splatChunkCount = fieldCount * Unsafe.SizeOf<float>();
-        byte[] splatChunk = new byte[splatChunkCount];
-
-
-        GaussianCloud cloud = new(numPoints, shDim, false);
-        Span<float> curChunk = MemoryMarshal.Cast<byte, float>(splatChunk);
-
-        SplatChunkReaderWriter chunkReader = new(
-            curChunk,
-            [ index("x"), index("y"), index("z") ],
-            [ index("scale_0"), index("scale_1"), index("scale_2") ],
-            [ index("rot_0"), index("rot_1"), index("rot_2"), index("rot_3") ],
-            index("opacity"),
-            [ index("f_dc_0"), index("f_dc_1"), index("f_dc_2") ],
-            shIdx,
-            shDim
+        get => new(
+            FractionalBits,
+            positions[index],
+            scales[index],
+            rotations[index],
+            alphas[index],
+            colors[index],
+            sh[index]
         );
 
-
-
-        for (int i = 0; i < numPoints; i++)
+        set
         {
-            reader.Read(splatChunk, 0, splatChunkCount);
-
-            cloud[i] = chunkReader.Gaussian;
-        }
-
-        return cloud;
-
-        #endregion
-
-    }
-
-
-    public static GaussianCloud FromPly(string filePath)
-    {
-        using FileStream stream = File.OpenRead(filePath);
-        return FromPly(stream);
-    }
-
-
-    public void ToPly(Stream stream)
-    {
-        using BinaryWriter writer = new(stream);
-
-        int num = Count;
-        int shDim = SplatSerializationHelper.DimForDegree(ShDegree);
-        int shValCount = shDim * 3;
-        int splatChunkCount = 17 + shValCount;
-
-
-
-        writer.WriteLine("ply");
-        writer.WriteLine("format binary_little_endian 1.0");
-        writer.WriteLine("element vertex " + num);
-        writer.WriteLine("property float x");
-        writer.WriteLine("property float y");
-        writer.WriteLine("property float z");
-        writer.WriteLine("property float scale_0");
-        writer.WriteLine("property float scale_1");
-        writer.WriteLine("property float scale_2");
-        writer.WriteLine("property float rot_0");
-        writer.WriteLine("property float rot_1");
-        writer.WriteLine("property float rot_2");
-        writer.WriteLine("property float rot_3");
-        writer.WriteLine("property float opacity");
-        writer.WriteLine("property float f_dc_0");
-        writer.WriteLine("property float f_dc_1");
-        writer.WriteLine("property float f_dc_2");
-
-        for (int i = 0; i < shValCount; i++)
-            writer.WriteLine("property float f_rest_" + i);
-
-        writer.WriteLine("property float nx");
-        writer.WriteLine("property float ny");
-        writer.WriteLine("property float nz");
-        writer.WriteLine("end_header");
-
-
-        byte[] splatChunk = new byte[splatChunkCount * Unsafe.SizeOf<float>()];
-        Span<float> curChunk = MemoryMarshal.Cast<byte, float>(splatChunk);
-
-        Span<int> shIdx = stackalloc int[shValCount];
-        for (int i = 0; i < shValCount; i++)
-            shIdx[i] = 14 + i;
-
-        SplatChunkReaderWriter chunkWriter = new(
-            curChunk,
-            [ 0, 1, 2 ],
-            [ 3, 4, 5 ],
-            [ 6, 7, 8, 9 ],
-            10,
-            [ 11, 12, 13 ],
-            shIdx,
-            shDim
-        );
-
-        for (int i = 0; i < num; i++)
-        {
-            chunkWriter.Gaussian = gaussians[i];
-            writer.Write(splatChunk);
+            positions[index] = value.PackedPosition;
+            scales[index] = value.PackedScale;
+            rotations[index] = value.PackedRotation;
+            alphas[index] = value.PackedAlpha;
+            colors[index] = value.PackedColor;
+            sh[index] = value.PackedSh;
         }
     }
 
 
-    public void ToPly(string filePath)
+    internal readonly FixedVector3[] positions = new FixedVector3[capacity];
+    internal readonly QuantizedScale[] scales = new QuantizedScale[capacity];
+    internal readonly QuantizedQuat[] rotations = new QuantizedQuat[capacity];
+    internal readonly QuantizedAlpha[] alphas = new QuantizedAlpha[capacity];
+    internal readonly QuantizedColor[] colors = new QuantizedColor[capacity];
+    internal readonly QuantizedHarmonics[] sh = new QuantizedHarmonics[capacity];
+
+
+    protected override bool ContainsImpl(PackedGaussian Gaussian) => throw new NotImplementedException();
+    protected override void CopyToImpl(PackedGaussian[] array, int arrayIndex) => throw new NotImplementedException();
+
+
+    protected override IEnumerator<PackedGaussian> GetTypedEnumeratorImpl() => new PackedGaussianEnumerator(this);
+    protected override IEnumerator GetEnumeratorImpl() => new PackedGaussianEnumerator(this);
+
+
+
+
+
+
+    public struct PackedGaussianEnumerator(PackedGaussianCloud cloud) : IEnumerator<PackedGaussian>
     {
-        using FileStream stream = File.OpenWrite(filePath);
+        private int curIndex = -1;
+        readonly PackedGaussian IEnumerator<PackedGaussian>.Current
+        {
+            get
+            {
+                try
+                {
+                    return cloud[curIndex];
+                }
+                catch (IndexOutOfRangeException)
+                {
+                    return default;
+                }
+            }
+        }
 
-        ToPly(stream);
+
+        readonly object? IEnumerator.Current
+        {
+            get
+            {
+                try
+                {
+                    return cloud[curIndex];
+                }
+                catch (IndexOutOfRangeException)
+                {
+                    return null;
+                }
+            }
+        }
+
+        public bool MoveNext() => ++curIndex < cloud.Count;
+        public void Reset() => curIndex = -1;
+
+        public readonly void Dispose() { }
     }
-
-
 }

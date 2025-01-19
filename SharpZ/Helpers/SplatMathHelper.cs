@@ -1,8 +1,9 @@
+using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace SharPZ;
 
-public static class SplatMathHelper
+public static class SplatMathHelpers
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int Clamp(int value, int min, int max)
@@ -21,9 +22,15 @@ public static class SplatMathHelper
         return (byte)Clamp(q, 0, 255);
     }
 
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static float UnquantizeSH(byte x) => (x - 128f) / 128f;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static PackedCoefficient QuantizeCoefficient(this Vector3 x, int bucketSize) => new(QuantizeSH(x.X, bucketSize), QuantizeSH(x.Y, bucketSize), QuantizeSH(x.Z, bucketSize));
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector3 UnquantizeCoefficient(this PackedCoefficient x) => new(UnquantizeSH(x.X), UnquantizeSH(x.Y), UnquantizeSH(x.Z));
+
 
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -35,3 +42,11 @@ public static class SplatMathHelper
 }
 
 
+public static class FixedPointHelpers
+{
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Fixed24 ToFixed(this float value, int fractionalBits) => new(value, fractionalBits);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static FixedVector3 ToFixed(this Vector3 value, int fractionalBits) => new(value, fractionalBits);
+}
