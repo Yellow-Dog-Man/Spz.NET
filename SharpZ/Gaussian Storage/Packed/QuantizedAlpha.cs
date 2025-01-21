@@ -10,7 +10,7 @@ public readonly struct QuantizedAlpha
 
     public QuantizedAlpha(float alpha)
     {
-        AlphaQ = (byte)(SplatMathHelpers.Sigmoid(alpha) * 255f);
+        AlphaQ = (SplatMathHelpers.Sigmoid(alpha) * 255f).ByteClamp();
     }
 
 

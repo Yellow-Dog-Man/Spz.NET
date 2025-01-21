@@ -14,9 +14,9 @@ public readonly struct QuantizedScale
     public QuantizedScale(Vector3 scale)
     {
         scale = (scale + new Vector3(10f)) * 16f;
-        X = (byte)scale.X;
-        Y = (byte)scale.Y;
-        Z = (byte)scale.Z;
+        X = scale.X.ByteClamp();
+        Y = scale.Y.ByteClamp();
+        Z = scale.Z.ByteClamp();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

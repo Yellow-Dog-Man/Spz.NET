@@ -19,7 +19,7 @@ public class PackedGaussians(
     public readonly byte[] Rotations = new byte[numPoints * 3];
     public readonly byte[] Alphas = new byte[numPoints];
     public readonly byte[] Colors = new byte[numPoints * 3];
-    public readonly byte[] Sh = new byte[numPoints * SplatSerializationHelper.DimForDegree(shDegree) * 3];
+    public readonly byte[] Sh = new byte[numPoints * SplatSerializationHelpers.DimForDegree(shDegree) * 3];
 }
 
 

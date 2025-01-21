@@ -10,12 +10,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        Quaternion realQuat = Quaternion.CreateFromYawPitchRoll(0.3f, -0.6f, 2.1f);
-        QuantizedQuat quantizedQuat = Quaternion.CreateFromYawPitchRoll(0.3f, -0.6f, 2.1f);
-
-        
-
-        args = ["./input.spz"];
+        args = args.Length > 0 ? args : ["./input.spz"];
         string input;
         if (args.Length > 0)
             input = Path.GetFullPath(args[0]);
@@ -37,7 +32,9 @@ class Program
         if (extension == ".ply")
         {
             var cloud = SplatSerializer.FromPly(input);
-            cloud.ToPly("./output.ply");
+            PackedGaussianCloud packed = cloud.Pack();
+
+            packed.Unpack().ToPly("./output.ply");
         }
         else if (extension == ".spz")
         {

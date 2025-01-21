@@ -12,7 +12,7 @@ public interface IGaussian
     Quaternion Rotation { get; }
     float Alpha { get; }
     Vector3 Color { get; }
-    GaussianHarmonics Sh { get; }
+    GaussianHarmonics<float> Sh { get; }
 }
 
 
@@ -27,10 +27,10 @@ public readonly struct Gaussian : IGaussian
         Rotation = packed.PackedRotation;
         Alpha = packed.PackedAlpha;
         Color = packed.PackedColor;
-        Sh = packed.PackedSh;
+        Sh = packed.Sh;
     }
 
-    public Gaussian(in Vector3 pos, in Vector3 scale, in Quaternion rotation, float alpha, in Vector3 color, in GaussianHarmonics sh)
+    public Gaussian(in Vector3 pos, in Vector3 scale, in Quaternion rotation, float alpha, in Vector3 color, in GaussianHarmonics<float> sh)
     {
         Position = pos;
         Scale = scale;
@@ -48,5 +48,5 @@ public readonly struct Gaussian : IGaussian
     public readonly Quaternion Rotation { get; }
     public readonly float Alpha { get; }
     public readonly Vector3 Color { get; }
-    public readonly GaussianHarmonics Sh { get; }
+    public readonly GaussianHarmonics<float> Sh { get; }
 }

@@ -26,9 +26,9 @@ public readonly struct QuantizedQuat
         value *= value.W < 0 ? -127.5f : 127.5f;
         value += new Quaternion(127.5f, 127.5f, 127.5f, 127.5f);
 
-        X = (byte)value.X;
-        Y = (byte)value.Y;
-        Z = (byte)value.Z;
+        X = value.X.ByteClamp();
+        Y = value.Y.ByteClamp();
+        Z = value.Z.ByteClamp();
     }
 
 

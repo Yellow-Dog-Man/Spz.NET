@@ -16,7 +16,7 @@ public readonly struct PackedGaussian : IGaussian
     public readonly Quaternion Rotation => PackedRotation;
     public readonly float Alpha => PackedAlpha;
     public readonly Vector3 Color => PackedColor;
-    public readonly GaussianHarmonics Sh => PackedSh;
+    public readonly GaussianHarmonics<float> Sh => PackedSh.Unquantize();
 
 
     public readonly FixedVector3 PackedPosition;
@@ -24,7 +24,7 @@ public readonly struct PackedGaussian : IGaussian
     public readonly QuantizedQuat PackedRotation;
     public readonly QuantizedAlpha PackedAlpha;
     public readonly QuantizedColor PackedColor;
-    public readonly QuantizedHarmonics PackedSh;
+    public readonly GaussianHarmonics<byte> PackedSh;
 
 
     public Gaussian Unpack(int fractionalBits = DEFAULT_FRACTIONAL_BITS) => new(this, fractionalBits);
@@ -37,7 +37,7 @@ public readonly struct PackedGaussian : IGaussian
         PackedRotation = gaussian.Rotation;
         PackedAlpha = gaussian.Alpha;
         PackedColor = gaussian.Color;
-        PackedSh = gaussian.Sh;
+        PackedSh = gaussian.Sh.Quantize();
     }
 
 
@@ -48,7 +48,7 @@ public readonly struct PackedGaussian : IGaussian
         in QuantizedQuat rotation,
         in QuantizedAlpha alpha,
         in QuantizedColor color,
-        in QuantizedHarmonics harmonics)
+        in GaussianHarmonics<byte> harmonics)
     {
         FractionalBits = fractionalBits;
         PackedPosition = position;

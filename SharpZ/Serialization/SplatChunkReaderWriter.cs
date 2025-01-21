@@ -71,32 +71,26 @@ internal readonly ref struct SplatChunkReaderWriter(
         set => chunk[alphaIdx] = value;
     }
 
-    public readonly GaussianHarmonics Sh
+    public readonly GaussianHarmonics<float> Sh
     {
         get
         {
-            GaussianHarmonics sh = new();
+            GaussianHarmonics<float> sh = new();
 
-            for (int i = 0; i < shDim; i++)
+            for (int i = 0; i < shDim * 3; i++)
             {
-                sh[i] = new(
-                    chunk[shIdx[i]],
-                    chunk[shIdx[i + shDim]],
-                    chunk[shIdx[i + 2 * shDim]]);
+                sh[i] = chunk[shIdx[i]];
             }
 
-            return sh;
+            return sh.Transpose();
         }
 
         set
         {
-            for (int i = 0; i < shDim; i++)
+            GaussianHarmonics<float> sh = value.Transpose();
+            for (int i = 0; i < shDim * 3; i++)
             {
-                Vector3 harmonic = value[i];
-
-                chunk[shIdx[i]] = harmonic.X;
-                chunk[shIdx[i + shDim]] = harmonic.Y;
-                chunk[shIdx[i + 2 * shDim]] = harmonic.Z;
+                chunk[shIdx[i]] = sh[i];
             }
         }
     }

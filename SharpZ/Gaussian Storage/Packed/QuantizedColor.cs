@@ -5,8 +5,10 @@ namespace SharPZ;
 
 public readonly struct QuantizedColor
 {
-    public readonly Vector3 Color => (new Vector3(X, Y, Z) / 255f) - new Vector3(0.5f);
     const float COLOR_SCALE = 0.15f;
+
+
+    public readonly Vector3 Color => ((new Vector3(X, Y, Z) / 255f) - new Vector3(0.5f)) / COLOR_SCALE;
     public readonly byte X;
     public readonly byte Y;
     public readonly byte Z;
@@ -14,10 +16,12 @@ public readonly struct QuantizedColor
     
     public QuantizedColor(Vector3 color)
     {
-        color *= new Vector3(COLOR_SCALE * 255f) + new Vector3(0.5f * 255f);
-        X = (byte)color.X;
-        Y = (byte)color.Y;
-        Z = (byte)color.Z;
+        color *= new Vector3(COLOR_SCALE * 255f);
+        color += new Vector3(0.5f * 255f);
+
+        X = color.X.ByteClamp();
+        Y = color.Y.ByteClamp();
+        Z = color.Z.ByteClamp();
     }
 
 
