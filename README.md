@@ -1,4 +1,4 @@
-# Spuzzy: A C# Implementation of SPZ (de)serialization.
+# Spz.NET: A C# Implementation of SPZ (de)serialization.
 
 This library provides a completely native implementation of Niantic Labs' SPZ format, of which the original can be found [here](https://github.com/nianticlabs/spz).
 
@@ -35,7 +35,7 @@ packed.ToSpz("/path/to/splat.spz");
 Gaussian clouds implement `IReadOnlyList<Gaussian>`, so they can be indexed and enumerated through as a normal collection.
 
 
-Also included in this repo is a demo library consisting of a simple console app to demonstrate how to use Spuzzy.
+Also included in this repo is a demo library consisting of a simple console app to demonstrate how to use Spz.NET.
 
 
 Unit tests and a proper nuget release will be coming soon.

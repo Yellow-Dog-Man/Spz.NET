@@ -6,12 +6,12 @@
     "configurations": [
 
         {
-            "name": "C#: Spuzzy Debug",
+            "name": "C#: Spz.NET Debug",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "Build: Spuzzy.Demo.csproj",
-            "program":"${workspaceFolder}/Spuzzy.Demo/bin/Debug/net9.0/Spuzzy.Demo.dll",
-            "args": ["-i", "${workspaceFolder}/Spuzzy.Demo/hornedlizard.spz", "-o", "${workspaceFolder}/Spuzzy.Demo/hornzedlizard.ply"]
+            "preLaunchTask": "Build: Spz.NET.Demo.csproj",
+            "program":"${workspaceFolder}/Spz.NET.Demo/bin/Debug/net9.0/Spz.NET.Demo.dll",
+            "args": ["-i", "${workspaceFolder}/Spz.NET.Demo/hornedlizard.spz", "-o", "${workspaceFolder}/Spz.NET.Demo/hornzedlizard.ply"]
         }
     ]
 }
