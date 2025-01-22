@@ -53,7 +53,7 @@ public class GaussianCloud : GaussianCollection<Gaussian>
     internal readonly Vector3[] colors;
     internal readonly MatrixView<float> sh;
 
-    public GaussianCloud(int capacity, int shDim, bool antialiased = false) : base(capacity, shDim, antialiased)
+    public GaussianCloud(int capacity, int shDim, GaussianFlags flags = 0) : base(capacity, shDim, flags)
     {
         positions = new Vector3[capacity];
         scales = new Vector3[capacity];
@@ -74,7 +74,7 @@ public class GaussianCloud : GaussianCollection<Gaussian>
 }
 
 
-public abstract class GaussianCollection<T>(int capacity, int shDim, bool antialiased = false) : IReadOnlyList<T>
+public abstract class GaussianCollection<T>(int capacity, int shDim, GaussianFlags flags = 0) : IReadOnlyList<T>
     where T : unmanaged, IGaussian
 {
     public abstract T this[int index] { get; set; }
@@ -87,7 +87,7 @@ public abstract class GaussianCollection<T>(int capacity, int shDim, bool antial
 
     public int ShDim { get; } = shDim;
     public int ShDegree { get; } = SplatSerializationHelpers.DegreeForDim(shDim);
-    public bool Antialiased => antialiased;
+    public GaussianFlags Flags => flags;
 
 
     public bool Contains(T gaussian) => ContainsImpl(gaussian);
@@ -148,7 +148,7 @@ public class PackedGaussianCloud : GaussianCollection<PackedGaussian>
     internal readonly QuantizedColor[] colors;
     internal readonly MatrixView<byte> sh;
 
-    public PackedGaussianCloud(int capacity, int shDim, int fractionalBits = PackedGaussian.DEFAULT_FRACTIONAL_BITS, bool antialiased = false) : base(capacity, shDim, antialiased)
+    public PackedGaussianCloud(int capacity, int shDim, int fractionalBits = PackedGaussian.DEFAULT_FRACTIONAL_BITS, GaussianFlags flags = 0) : base(capacity, shDim, flags)
     {
         FractionalBits = fractionalBits;
         positions = new FixedVector3[capacity];
@@ -210,4 +210,11 @@ public class PackedGaussianCloud : GaussianCollection<PackedGaussian>
 
         public readonly void Dispose() { }
     }
+}
+
+
+[Flags]
+public enum GaussianFlags : byte
+{
+    Antialiased = 1
 }

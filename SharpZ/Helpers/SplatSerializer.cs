@@ -86,10 +86,10 @@ public static class SplatSerializer
         Span<byte> chunkBytes = MemoryMarshal.Cast<float, byte>(chunk);
 
         // Create a gaussian cloud to store gaussians in.
-        GaussianCloud cloud = new(numPoints, shDim, false);
+        GaussianCloud cloud = new(numPoints, shDim);
 
         // Create a reader/writer with the indicies of each gaussian's properties within the chunk.
-        SplatChunkReaderWriter chunkReader = new(
+        PlyChunker chunkReader = new(
             chunk,
             [ index("x"), index("y"), index("z") ],
             [ index("scale_0"), index("scale_1"), index("scale_2") ],
@@ -180,7 +180,7 @@ public static class SplatSerializer
         for (int i = 0; i < shValCount; i++)
             shIdx[i] = 14 + i;
 
-        SplatChunkReaderWriter chunkWriter = new(
+        PlyChunker chunkWriter = new(
             curChunk,
             [ 0, 1, 2 ],
             [ 3, 4, 5 ],
@@ -216,15 +216,14 @@ public static class SplatSerializer
 
     public static PackedGaussianCloud FromSpz(Stream stream)
     {
-        GZipStream decompressor = new(stream, CompressionMode.Decompress);
-        BinaryReader reader = new(decompressor);
+        using GZipStream decompressor = new(stream, CompressionMode.Decompress);
+        using BinaryReader reader = new(decompressor);
 
-        
-        PackedGaussiansHeader header = reader.ReadSpzHeader();
+
+        SpzHeader header = SpzHeader.ReadFrom(reader);
         int numPoints = (int)header.NumPoints;
         int shDim = SplatSerializationHelpers.DimForDegree(header.ShDegree);
-        int shCoefficients = shDim * 3;
-        PackedGaussianCloud cloud = new(numPoints, shDim, header.FractionalBits, (header.Flags & 1) != 0);
+        PackedGaussianCloud cloud = new(numPoints, shDim, header.FractionalBits, header.Flags);
 
 
         // Chunk of the biggest size of the largest data type.
@@ -261,12 +260,49 @@ public static class SplatSerializer
 
         return FromSpz(stream);
     }
+    
 
 
-
-    public static void TransposeHarmonics(this Span<Gaussian> gaussians, int shDim)
+    public static void ToSpz(this PackedGaussianCloud cloud, Stream stream)
     {
+        SpzHeader header = new(
+            SpzHeader.MAGIC,
+            SpzHeader.VERSION,
+            (uint)cloud.Count,
+            (byte)cloud.ShDegree,
+            (byte)cloud.FractionalBits,
+            cloud.Flags
+        );
 
+
+        using GZipStream zipper = new(stream, CompressionLevel.Optimal);
+        using BinaryWriter writer = new(zipper);
+
+        header.WriteTo(writer);
+
+        Span<byte> posBytes = MemoryMarshal.Cast<FixedVector3, byte>(cloud.positions);
+        writer.Write(posBytes);
+
+        Span<byte> alphaBytes = MemoryMarshal.Cast<QuantizedAlpha, byte>(cloud.alphas);
+        writer.Write(alphaBytes);
+        
+        Span<byte> colorBytes = MemoryMarshal.Cast<QuantizedColor, byte>(cloud.colors);
+        writer.Write(colorBytes);
+
+        Span<byte> scaleBytes = MemoryMarshal.Cast<QuantizedScale, byte>(cloud.scales);
+        writer.Write(scaleBytes);
+
+        Span<byte> rotationBytes = MemoryMarshal.Cast<QuantizedQuat, byte>(cloud.rotations);
+        writer.Write(rotationBytes);
+
+        writer.Write(cloud.sh.Span);
+    }
+
+    public static void ToSpz(this PackedGaussianCloud cloud, string filePath)
+    {
+        using FileStream stream = File.OpenWrite(filePath);
+
+        ToSpz(cloud, stream);
     }
 }
 
@@ -274,7 +310,7 @@ public static class SplatSerializer
 
 public static class StreamHelpers
 {
-    const int READ_CHUNK_COUNT = 512;
+    const int BUFFER_CHUNK_COUNT = 8192;
     private static readonly ArrayPool<byte> pool = ArrayPool<byte>.Create();
 
 
@@ -300,7 +336,7 @@ public static class StreamHelpers
 
     public static void Read(this BinaryReader reader, Span<byte> bytes)
     {
-        byte[] buffer = pool.Rent(READ_CHUNK_COUNT);
+        byte[] buffer = pool.Rent(BUFFER_CHUNK_COUNT);
         Span<byte> bufferSpan = buffer;
 
         int len = bytes.Length;
@@ -308,10 +344,33 @@ public static class StreamHelpers
 
         while (curIndex < len)
         {
-            Span<byte> byteSlice = bytes[curIndex..];
-            int curLength = Math.Min(byteSlice.Length, READ_CHUNK_COUNT);
-            reader.Read(buffer, 0, curLength);
-            bufferSpan[..curLength].CopyTo(byteSlice);
+            int curLength = Math.Min(bytes.Length - curIndex, BUFFER_CHUNK_COUNT);
+            int bytesRead = reader.Read(buffer, 0, curLength);
+            Span<byte> byteSlice = bytes.Slice(curIndex);
+            bufferSpan[..bytesRead].CopyTo(byteSlice);
+            curIndex += bytesRead;
+        }
+
+        pool.Return(buffer);
+    }
+
+
+
+    public static void Write(this BinaryWriter writer, Span<byte> bytes)
+    {
+        byte[] buffer = pool.Rent(BUFFER_CHUNK_COUNT);
+        Span<byte> bufferSpan = buffer;
+
+        int len = bytes.Length;
+        int curIndex = 0;
+
+        Span<byte> byteSlice;
+        while (curIndex < len)
+        {
+            int curLength = Math.Min(bytes.Length - curIndex, BUFFER_CHUNK_COUNT);
+            byteSlice = bytes.Slice(curIndex, curLength);
+            byteSlice.CopyTo(bufferSpan[..curLength]);
+            writer.Write(buffer, 0, curLength);
             curIndex += curLength;
         }
 
