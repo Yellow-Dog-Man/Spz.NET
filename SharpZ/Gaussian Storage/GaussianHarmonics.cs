@@ -359,11 +359,33 @@ public struct GaussianHarmonics<T>
     }
 
 
-    public readonly GaussianHarmonics<T> Transpose()
-{
-    return new(
-        Component0,  Component3,  Component6,  Component9,  Component12, Component15, Component18, Component21, Component24, Component27, Component30, Component33, Component36, Component39, Component42,
-        Component1,  Component4,  Component7,  Component10, Component13, Component16, Component19, Component22, Component25, Component28, Component31, Component34, Component37, Component40, Component43,
-        Component2,  Component5,  Component8,  Component11, Component14, Component17, Component20, Component23, Component26, Component29, Component32, Component35, Component38, Component41, Component44);
-}
+    public readonly GaussianHarmonics<T> ToNCS()
+    {
+        return new(
+            Component0,  Component3,  Component6,  Component9,  Component12, Component15, Component18, Component21, Component24, Component27, Component30, Component33, Component36, Component39, Component42,
+            Component1,  Component4,  Component7,  Component10, Component13, Component16, Component19, Component22, Component25, Component28, Component31, Component34, Component37, Component40, Component43,
+            Component2,  Component5,  Component8,  Component11, Component14, Component17, Component20, Component23, Component26, Component29, Component32, Component35, Component38, Component41, Component44);
+    }
+
+
+    public readonly GaussianHarmonics<T> ToNSC()
+    {
+        return new(
+            Component0,  Component15, Component30,
+            Component1,  Component16, Component31,
+            Component2,  Component17, Component32,
+            Component3,  Component18, Component33,
+            Component4,  Component19, Component34,
+            Component5,  Component20, Component35,
+            Component6,  Component21, Component36,
+            Component7,  Component22, Component37,
+            Component8,  Component23, Component38,
+            Component9,  Component24, Component39,
+            Component10, Component25, Component40,
+            Component11, Component26, Component41,
+            Component12, Component27, Component42,
+            Component13, Component28, Component43,
+            Component14, Component29, Component44
+        );
+    }
 }

@@ -2,7 +2,7 @@ using System.Numerics;
 
 namespace SharPZ;
 
-internal readonly ref struct SplatChunkReaderWriter(
+internal readonly ref struct PlyChunker(
     Span<float> chunk,
     Span<int> positionIdx,
     Span<int> scaleIdx,
@@ -82,12 +82,12 @@ internal readonly ref struct SplatChunkReaderWriter(
                 sh[i] = chunk[shIdx[i]];
             }
 
-            return sh.Transpose();
+            return sh.ToNSC();
         }
 
         set
         {
-            GaussianHarmonics<float> sh = value.Transpose();
+            GaussianHarmonics<float> sh = value.ToNCS();
             for (int i = 0; i < shDim * 3; i++)
             {
                 chunk[shIdx[i]] = sh[i];
