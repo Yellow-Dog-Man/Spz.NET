@@ -16,7 +16,6 @@
 *.sln.docstates
 *.ply
 *.spz
-*.spzu
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
