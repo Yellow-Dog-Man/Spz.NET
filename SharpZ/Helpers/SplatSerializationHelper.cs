@@ -9,12 +9,12 @@ namespace SharPZ;
 
 public static class SplatSerializationHelpers
 {
-    const string PLY_HEADER = "ply";
-    const string FORMAT_MARKER = "format ";
-    const string SUPPORTED_FORMAT = "binary_little_endian 1.0";
-    const string ELEMENT_VERTICES_MARKER = "element vertex ";
+    public const string PLY_HEADER = "ply";
+    public const string FORMAT_MARKER = "format ";
+    public const string SUPPORTED_FORMAT = "binary_little_endian 1.0";
+    public const string ELEMENT_VERTICES_MARKER = "element vertex ";
 
-    const int SPZ_MAX_POINTS = 10000000;
+    public const int SPZ_MAX_POINTS = 10000000;
 
 
     public static int DimForDegree(int degree)
@@ -131,40 +131,11 @@ public static class SplatSerializationHelpers
 
 
 
-    public static PackedGaussiansHeader ReadSpzHeader(this BinaryReader reader)
-    {
-        PackedGaussiansHeader readHeader = new(
-            reader.ReadUInt32(),
-            reader.ReadUInt32(),
-            reader.ReadUInt32(),
-            reader.ReadByte(),
-            reader.ReadByte(),
-            reader.ReadByte(),
-            reader.ReadByte()
-        );
-
-        if (readHeader.Magic != PackedGaussiansHeader.MAGIC)
-            throw new SplatFormatException("SPZ header not found.");
-        
-        if (readHeader.Version != PackedGaussiansHeader.VERSION)
-            throw new SplatFormatException($"SPZ version not supported: {readHeader.Version}");
-        
-        if (readHeader.NumPoints > SPZ_MAX_POINTS)
-            throw new SplatFormatException($"SPZ has too many points: {readHeader.NumPoints}");
-        
-        if (readHeader.ShDegree > 3)
-            throw new SplatFormatException($"SPZ has unsupported spherical harmonics degree: {readHeader.ShDegree}");
-        
-        
-        return readHeader;
-    }
-
-
 
     public static PackedGaussianCloud Pack(this GaussianCloud cloud, int fractionalBits = PackedGaussian.DEFAULT_FRACTIONAL_BITS)
     {
         int shDim = DimForDegree(cloud.ShDegree);
-        PackedGaussianCloud packed = new(cloud.Count, shDim, fractionalBits, cloud.Antialiased);
+        PackedGaussianCloud packed = new(cloud.Count, shDim, fractionalBits, cloud.Flags);
 
         for (int i = 0; i < cloud.Count; i++)
         {
@@ -190,17 +161,25 @@ public static class SplatSerializationHelpers
 
 
 
-    public static GaussianCloud Unpack(this PackedGaussianCloud packed, int fractionalBits = PackedGaussian.DEFAULT_FRACTIONAL_BITS)
+    public static GaussianCloud Unpack(this PackedGaussianCloud packed)
     {
-        GaussianCloud unpacked = new(packed.Count, DimForDegree(packed.ShDegree), packed.Antialiased);
+        GaussianCloud unpacked = new(packed.Count, DimForDegree(packed.ShDegree), packed.Flags);
 
         for (int i = 0; i < packed.Count; i++)
         {
-            unpacked.positions[i] = packed.positions[i].ToVector3(fractionalBits);
+            unpacked.positions[i] = packed.positions[i].ToVector3(packed.FractionalBits);
             unpacked.alphas[i] = packed.alphas[i];
             unpacked.colors[i] = packed.colors[i];
             unpacked.scales[i] = packed.scales[i];
             unpacked.rotations[i] = packed.rotations[i];
+
+
+            // if (unpacked.positions[i].Length() > 2047f)
+            // {
+            //     Vector3 v3 = unpacked.positions[i];
+            //     FixedVector3 f3 = packed.positions[i];
+            //     throw new IndexOutOfRangeException($"WHAT THE FFFF: {unpacked.positions[i]}");
+            // }
 
 
             var harmonic = unpacked.sh.GetRowSpan(i);
