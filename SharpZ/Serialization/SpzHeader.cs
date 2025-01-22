@@ -47,7 +47,7 @@ public readonly struct SpzHeader(uint magic, uint version, uint points, byte shD
         if (readHeader.Version != VERSION)
             throw new SplatFormatException($"SPZ version not supported: {readHeader.Version}");
         
-        if (readHeader.NumPoints > SplatSerializationHelpers.SPZ_MAX_POINTS)
+        if (readHeader.NumPoints > SplatSerializer.SPZ_MAX_POINTS)
             throw new SplatFormatException($"SPZ has too many points: {readHeader.NumPoints}");
         
         if (readHeader.ShDegree > 3)

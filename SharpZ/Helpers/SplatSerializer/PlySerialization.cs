@@ -1,15 +1,59 @@
-using System.Buffers;
-using System.IO.Compression;
+﻿using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace SharPZ;
 
-public static class SplatSerializer
+
+public static partial class SplatSerializer
 {
-    const string END_HEADER = "end_header";
-    const string FLOAT_PROPERTY_MARKER = "property float ";
+    public const string PLY_HEADER = "ply";
+    public const string END_HEADER = "end_header";
+    public const string FORMAT_MARKER = "format ";
+    public const string FLOAT_PROPERTY_MARKER = "property float ";
+    public const string ELEMENT_VERTICES_MARKER = "element vertex ";
+    public const string SUPPORTED_FORMAT = "binary_little_endian 1.0";
+
+
+
+    public static int ValidatePlySplat(BinaryReader reader)
+    {
+        string? header = reader.GetLine(PLY_HEADER);
+        if (header == null)
+            throw new SplatFormatException("The input file doesn't appear to be a PLY file.");
+        
+        #if DEBUG
+        Console.WriteLine($"DEBUG: PLY header: {header}");
+        #endif
+        
+        string? formatLine = reader.GetLine(FORMAT_MARKER, false);
+        if (formatLine == null)
+            throw new SplatFormatException("Unable to determine format of PLY file.");
+
+        #if DEBUG
+        Console.WriteLine($"DEBUG: PLY format: {formatLine}");
+        #endif
+
+        string format = formatLine.Substring(FORMAT_MARKER.Length);
+        if (format != SUPPORTED_FORMAT)
+            throw new SplatFormatException($"Only PLY files in the \"{SUPPORTED_FORMAT}\" format can be used, invalid format: {format}");
+        
+        string? pointCountMarker = reader.GetLine(ELEMENT_VERTICES_MARKER, false);
+        if (pointCountMarker == null)
+            throw new SplatFormatException($"Couldn't determine element vertices from: {pointCountMarker}");
+        
+        string pointCountStr = pointCountMarker.Substring(ELEMENT_VERTICES_MARKER.Length);
+
+        if (!int.TryParse(pointCountStr, out int numPoints))
+            throw new SplatFormatException($"Unable to parse point count from: \"{pointCountMarker}\"");
+        
+        if (numPoints <= 0 || numPoints > 10 * 1024 * 1024)
+            throw new SplatFormatException($"Invalid vertex count: {numPoints}");
+        
+
+        return numPoints;
+    }
 
 
 
@@ -25,7 +69,7 @@ public static class SplatSerializer
         using BinaryReader reader = new(stream);
 
         // Validate the PLY file and return the number of points it has in it.
-        int numPoints = SplatSerializationHelpers.ValidatePlySplat(reader);
+        int numPoints = ValidatePlySplat(reader);
 
         #region Property decoding
 
@@ -140,7 +184,7 @@ public static class SplatSerializer
         using BinaryWriter writer = new(stream);
 
         int num = gaussians.Count;
-        int shDim = SplatSerializationHelpers.DimForDegree(gaussians.ShDegree);
+        int shDim = SplatMathHelpers.DimForDegree(gaussians.ShDegree);
         int shValCount = shDim * 3;
         int splatChunkCount = 17 + shValCount;
 
@@ -209,171 +253,5 @@ public static class SplatSerializer
         using FileStream stream = File.Open(filePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
 
         ToPly(gaussians, stream);
-    }
-
-
-
-
-    public static PackedGaussianCloud FromSpz(Stream stream)
-    {
-        using GZipStream decompressor = new(stream, CompressionMode.Decompress);
-        using BinaryReader reader = new(decompressor);
-
-
-        SpzHeader header = SpzHeader.ReadFrom(reader);
-        int numPoints = (int)header.NumPoints;
-        int shDim = SplatSerializationHelpers.DimForDegree(header.ShDegree);
-        PackedGaussianCloud cloud = new(numPoints, shDim, header.FractionalBits, header.Flags);
-
-
-        // Chunk of the biggest size of the largest data type.
-
-        Span<byte> cloudPosBytes = MemoryMarshal.Cast<FixedVector3, byte>(cloud.positions);
-        reader.Read(cloudPosBytes);
-        
-    
-        Span<byte> cloudAlphaBytes = MemoryMarshal.Cast<QuantizedAlpha, byte>(cloud.alphas);
-        reader.Read(cloudAlphaBytes);
-
-
-        Span<byte> cloudColorBytes = MemoryMarshal.Cast<QuantizedColor, byte>(cloud.colors);
-        reader.Read(cloudColorBytes);
-        
-
-        Span<byte> cloudScaleBytes = MemoryMarshal.Cast<QuantizedScale, byte>(cloud.scales);
-        reader.Read(cloudScaleBytes);
-
-
-        Span<byte> cloudRotationBytes = MemoryMarshal.Cast<QuantizedQuat, byte>(cloud.rotations);
-        reader.Read(cloudRotationBytes);
-
-        reader.Read(cloud.sh.Span);
-
-        return cloud;
-    }
-
-
-
-    public static PackedGaussianCloud FromSpz(string filePath)
-    {
-        using FileStream stream = File.OpenRead(filePath);
-
-        return FromSpz(stream);
-    }
-    
-
-
-    public static void ToSpz(this PackedGaussianCloud cloud, Stream stream)
-    {
-        SpzHeader header = new(
-            SpzHeader.MAGIC,
-            SpzHeader.VERSION,
-            (uint)cloud.Count,
-            (byte)cloud.ShDegree,
-            (byte)cloud.FractionalBits,
-            cloud.Flags
-        );
-
-
-        using GZipStream zipper = new(stream, CompressionLevel.Optimal);
-        using BinaryWriter writer = new(zipper);
-
-        header.WriteTo(writer);
-
-        Span<byte> posBytes = MemoryMarshal.Cast<FixedVector3, byte>(cloud.positions);
-        writer.Write(posBytes);
-
-        Span<byte> alphaBytes = MemoryMarshal.Cast<QuantizedAlpha, byte>(cloud.alphas);
-        writer.Write(alphaBytes);
-        
-        Span<byte> colorBytes = MemoryMarshal.Cast<QuantizedColor, byte>(cloud.colors);
-        writer.Write(colorBytes);
-
-        Span<byte> scaleBytes = MemoryMarshal.Cast<QuantizedScale, byte>(cloud.scales);
-        writer.Write(scaleBytes);
-
-        Span<byte> rotationBytes = MemoryMarshal.Cast<QuantizedQuat, byte>(cloud.rotations);
-        writer.Write(rotationBytes);
-
-        writer.Write(cloud.sh.Span);
-    }
-
-    public static void ToSpz(this PackedGaussianCloud cloud, string filePath)
-    {
-        using FileStream stream = File.OpenWrite(filePath);
-
-        ToSpz(cloud, stream);
-    }
-}
-
-
-
-public static class StreamHelpers
-{
-    const int BUFFER_CHUNK_COUNT = 8192;
-    private static readonly ArrayPool<byte> pool = ArrayPool<byte>.Create();
-
-
-
-    // public static void Read(this Stream stream, Span<byte> bytes)
-    // {
-    //     byte[] buffer = pool.Rent(READ_CHUNK_COUNT);
-    //     Span<byte> bufferSpan = buffer;
-
-    //     int len = bytes.Length;
-    //     int curIndex = 0;
-
-    //     while (curIndex < len)
-    //     {
-    //         int bytesRead = stream.Read(buffer, 0, READ_CHUNK_COUNT);
-    //         bufferSpan[..bytesRead].CopyTo(bytes[curIndex..]);
-    //         curIndex += bytesRead;
-    //     }
-
-    //     pool.Return(buffer);
-    // }
-
-
-    public static void Read(this BinaryReader reader, Span<byte> bytes)
-    {
-        byte[] buffer = pool.Rent(BUFFER_CHUNK_COUNT);
-        Span<byte> bufferSpan = buffer;
-
-        int len = bytes.Length;
-        int curIndex = 0;
-
-        while (curIndex < len)
-        {
-            int curLength = Math.Min(bytes.Length - curIndex, BUFFER_CHUNK_COUNT);
-            int bytesRead = reader.Read(buffer, 0, curLength);
-            Span<byte> byteSlice = bytes.Slice(curIndex);
-            bufferSpan[..bytesRead].CopyTo(byteSlice);
-            curIndex += bytesRead;
-        }
-
-        pool.Return(buffer);
-    }
-
-
-
-    public static void Write(this BinaryWriter writer, Span<byte> bytes)
-    {
-        byte[] buffer = pool.Rent(BUFFER_CHUNK_COUNT);
-        Span<byte> bufferSpan = buffer;
-
-        int len = bytes.Length;
-        int curIndex = 0;
-
-        Span<byte> byteSlice;
-        while (curIndex < len)
-        {
-            int curLength = Math.Min(bytes.Length - curIndex, BUFFER_CHUNK_COUNT);
-            byteSlice = bytes.Slice(curIndex, curLength);
-            byteSlice.CopyTo(bufferSpan[..curLength]);
-            writer.Write(buffer, 0, curLength);
-            curIndex += curLength;
-        }
-
-        pool.Return(buffer);
     }
 }

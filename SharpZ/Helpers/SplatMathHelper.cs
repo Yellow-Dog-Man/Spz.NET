@@ -8,8 +8,8 @@ public static class SplatMathHelpers
     const int SH1_BUCKET_SIZE = 1 << (8 - 5);
     const int SHREST_BUCKET_SIZE = 1 << (8 - 4);
 
-
-    public static GaussianHarmonics<byte> Quantize(this GaussianHarmonics<float> harmonics)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static GaussianHarmonics<byte> Quantize(this in GaussianHarmonics<float> harmonics)
     {
         GaussianHarmonics<byte> quantized = new();
         
@@ -24,8 +24,8 @@ public static class SplatMathHelpers
         return quantized;
     }
 
-
-    public static GaussianHarmonics<float> Unquantize(this GaussianHarmonics<byte> harmonics)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static GaussianHarmonics<float> Unquantize(this in GaussianHarmonics<byte> harmonics)
     {
         GaussianHarmonics<float> unquantized = new();
         
@@ -36,7 +36,7 @@ public static class SplatMathHelpers
     }
 
 
-
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Quantize(this Span<float> harmonics, Span<byte> quantized)
     {
         int i = harmonics.Length;
@@ -49,7 +49,7 @@ public static class SplatMathHelpers
         }
     }
 
-
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Unquantize(this Span<byte> quantized, Span<float> harmonics)
     {   
         int i = quantized.Length;
@@ -99,17 +99,34 @@ public static class SplatMathHelpers
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static float InvSigmoid(float x) => (float)Math.Log(x / (1f - x));
-}
 
-
-public static class FixedPointHelpers
-{
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Fixed24 ToFixed(this float value, int fractionalBits) => new(value, fractionalBits);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static FixedVector3 ToFixed(this Vector3 value, int fractionalBits) => new(value, fractionalBits);
+    public static int DimForDegree(int degree)
+    {
+        return degree switch
+        {
+            0 => 0,
+            1 => 3,
+            2 => 8,
+            3 => 15,
+            _ => throw new NotImplementedException($"Unsupported SH degree: {degree}")
+        };
+    }
+
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static byte ByteClamp(this float value) => (byte)Math.Min(Math.Max(0d, Math.Round(value)), 255d);
+    public static int DegreeForDim(int dim)
+    {
+        if (dim < 3)
+            return 0;
+
+        if (dim < 8)
+            return 1;
+
+        if (dim < 15)
+            return 2;
+
+        return 3;
+    }
 }

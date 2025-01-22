@@ -3,6 +3,11 @@ using System.Runtime.CompilerServices;
 
 namespace SharPZ;
 
+/// <summary>
+/// An analog of <see cref="Vector3"/> with each component as a 24-bit fixed-point number with a given number of bits dedicated to the fractional portion.
+/// </summary>
+/// <param name="value">The vector to be converted to a fixed-point representation</param>
+/// <param name="fractionalBits">The number of bits dedicated to representing the fractional portion of each component.</param>
 public readonly struct FixedVector3(in Vector3 value, int fractionalBits)
 {
     public readonly Fixed24 X = value.X.ToFixed(fractionalBits);

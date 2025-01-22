@@ -255,11 +255,11 @@ public struct GaussianHarmonics<T>
     public T Component44;
 
 
-    public GaussianHarmonics(IEnumerable<T> data)
+    public GaussianHarmonics(Span<T> data)
     {
-        int i = 0;
-        foreach (var coeffComponent in data)
-            this[i++] = coeffComponent;
+        int i = data.Length;
+        while (i-- > 0)
+            this[i] = data[i];
     }
 
 
