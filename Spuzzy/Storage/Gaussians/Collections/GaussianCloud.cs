@@ -8,10 +8,15 @@ using Spuzzy.Helpers;
 namespace Spuzzy;
 
 
-
+/// <summary>
+/// A collection of uncompressed gaussians representing a gaussian splat.
+/// </summary>
 public class GaussianCloud : GaussianCollection
 {
+    /// <inheritdoc/>
     public override bool Compressed => false;
+
+    /// <inheritdoc/>
     public override Gaussian this[int index]
     {
         get
@@ -39,11 +44,8 @@ public class GaussianCloud : GaussianCollection
             colors[index] = value.Color;
             
 
-            Span<GaussianHarmonics<float>> harmonic = [ value.Sh ];
-            Span<float> harmonicCoeffs = MemoryMarshal.Cast<GaussianHarmonics<float>, float>(harmonic);
-
-            var dest = sh.GetRowSpan(index);
-            harmonicCoeffs.CopyTo(dest);
+            var row = sh.GetRowSpan(index);
+            value.Sh.To(row);
         }
     }
 
@@ -55,6 +57,12 @@ public class GaussianCloud : GaussianCollection
     internal readonly Vector3[] colors;
     internal readonly MatrixView<float> sh;
 
+    /// <summary>
+    /// Creates a cloud of gaussians with the specified parameters.
+    /// </summary>
+    /// <param name="capacity">The capacity of the cloud.</param>
+    /// <param name="shDim">The dimensions of each gaussian's spherical harmonics.</param>
+    /// <param name="flags">The collection flags.</param>
     public GaussianCloud(int capacity, int shDim, GaussianFlags flags = 0) : base(capacity, shDim, flags)
     {
         positions = new Vector3[capacity];
@@ -65,16 +73,12 @@ public class GaussianCloud : GaussianCollection
         sh = new(shDim * 3, capacity);
     }
 
-    // protected readonly Gaussian[] gaussians = new Gaussian[capacity];
 
-
-    protected override void CopyToImpl(Gaussian[] array, int arrayIndex) => throw new NotImplementedException();
-    protected override bool ContainsImpl(Gaussian gaussian) => throw new NotImplementedException();
-    protected override IEnumerator<Gaussian> GetTypedEnumeratorImpl() => throw new NotImplementedException();
-    protected override IEnumerator GetEnumeratorImpl() => throw new NotImplementedException();
-
-
-
+    /// <summary>
+    /// Lossily compresses this collection into a more compact format.
+    /// </summary>
+    /// <param name="fractionalBits">The number of bits to use for the fractional portion of each gaussian's position.</param>
+    /// <returns>A compressed cloud of gaussians.</returns>
     public PackedGaussianCloud Pack(int fractionalBits = PackedGaussianCloud.DEFAULT_FRACTIONAL_BITS)
     {
         int shDim = SplatMathHelpers.DimForDegree(ShDegree);

@@ -5,7 +5,11 @@ using System.Runtime.InteropServices;
 namespace Spuzzy;
 
 
-public struct GaussianHarmonics<T>
+/// <summary>
+/// Represents the spherical harmonics of a given gaussian.
+/// </summary>
+/// <typeparam name="T">The type to use for each coefficient's components.</typeparam>
+public struct GaussianHarmonics<T> : IEquatable<GaussianHarmonics<T>>
     where T : unmanaged
 {
     public const int COEFFICIENT_LENGTH = 15;
@@ -255,14 +259,6 @@ public struct GaussianHarmonics<T>
     public T Component44;
 
 
-    public GaussianHarmonics(Span<T> data)
-    {
-        int i = data.Length;
-        while (i-- > 0)
-            this[i] = data[i];
-    }
-
-
     public unsafe GaussianHarmonics(
         T component0,
         T component1,
@@ -359,6 +355,19 @@ public struct GaussianHarmonics<T>
     }
 
 
+    /// <summary>
+    /// Transposes the harmonics such that each row of components corresponds to a given color channel. Ex:
+    /// <para>
+    /// [RRRR]
+    /// </para>
+    /// <para>
+    /// [GGGG]
+    /// </para>
+    /// <para>
+    /// [BBBB]
+    /// </para>
+    /// </summary>
+    /// <returns>The transposed harmonics.</returns>
     public readonly GaussianHarmonics<T> ToNCS()
     {
         return new(
@@ -368,6 +377,19 @@ public struct GaussianHarmonics<T>
     }
 
 
+    /// <summary>
+    /// Transposes the harmonics such that each row of components corresponds to each color.
+    /// <para>
+    /// [RGB]
+    /// </para>
+    /// <para>
+    /// [RGB]
+    /// </para>
+    /// <para>
+    /// [RGB]
+    /// </para>
+    /// </summary>
+    /// <returns>The transposed harmonics.</returns>
     public readonly GaussianHarmonics<T> ToNSC()
     {
         return new(
@@ -388,4 +410,44 @@ public struct GaussianHarmonics<T>
             Component14, Component29, Component44
         );
     }
+
+
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static GaussianHarmonics<T> From(Span<T> values)
+    {
+        GaussianHarmonics<T> fromSpan = new();
+
+        int i = values.Length;
+
+        while (i-- > 0)
+            fromSpan[i] = values[i];
+        
+        return fromSpan;
+    }
+
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public readonly void To(Span<T> values)
+    {
+        int i = values.Length;
+
+        while (i-- > 0)
+            values[i] = this[i];
+    }
+
+    public readonly bool Equals(GaussianHarmonics<T> other)
+    {
+        bool condition = true;
+        int i = COEFFICIENT_COMPONENTS;
+        while (i-- > 0)
+            condition &= this[i].Equals(other[i]);
+
+        return condition;
+    }
+
+
+    public static bool operator ==(in GaussianHarmonics<T> left, in GaussianHarmonics<T> right) => left.Equals(right);
+
+    public static bool operator !=(in GaussianHarmonics<T> left, in GaussianHarmonics<T> right) => !left.Equals(right);
 }

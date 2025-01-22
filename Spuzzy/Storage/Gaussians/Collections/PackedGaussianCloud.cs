@@ -4,11 +4,17 @@ using Spuzzy.Helpers;
 
 namespace Spuzzy;
 
+/// <summary>
+/// Represents a compressed collection of gaussians representing a gaussian splat.
+/// </summary>
 public class PackedGaussianCloud : GaussianCollection
 {
     public const int DEFAULT_FRACTIONAL_BITS = 12;
+
+    /// <inheritdoc/>
     public override bool Compressed => true;
 
+    /// <inheritdoc/>
     public override Gaussian this[int index]
     {
         get => new(
@@ -17,7 +23,7 @@ public class PackedGaussianCloud : GaussianCollection
             rotations[index],
             alphas[index],
             colors[index],
-            new GaussianHarmonics<byte>(sh.GetRowSpan(index)).Unquantize()
+            GaussianHarmonics<byte>.From(sh.GetRowSpan(index)).Unquantize()
         );
 
         set
@@ -28,12 +34,10 @@ public class PackedGaussianCloud : GaussianCollection
             alphas[index] = value.Alpha;
             colors[index] = value.Color;
             
-            var transposedRow = sh.GetRowSpan(index);
+            var row = sh.GetRowSpan(index);
 
             GaussianHarmonics<byte> packed = value.Sh.Quantize();
-            int i = transposedRow.Length;
-            while (i-- > 0)
-                transposedRow[i] = packed[i];
+            packed.To(row);
         }
     }
 
@@ -45,6 +49,14 @@ public class PackedGaussianCloud : GaussianCollection
     internal readonly QuantizedColor[] colors;
     internal readonly MatrixView<byte> sh;
 
+
+    /// <summary>
+    /// Creates a cloud of gaussians with the specified parameters.
+    /// </summary>
+    /// <param name="capacity">The capacity of the cloud.</param>
+    /// <param name="shDim">The dimensions of each gaussian's spherical harmonics.</param>
+    /// <param name="fractionalBits">The number of bits dedicated to the fractional portion of each gaussian's position.</param>
+    /// <param name="flags">The collection flags.</param>
     public PackedGaussianCloud(int capacity, int shDim, int fractionalBits = DEFAULT_FRACTIONAL_BITS, GaussianFlags flags = 0) : base(capacity, shDim, flags, fractionalBits)
     {
         positions = new FixedVector3[capacity];
@@ -55,15 +67,12 @@ public class PackedGaussianCloud : GaussianCollection
         sh = new(shDim * 3, capacity);
     }
 
-    protected override bool ContainsImpl(Gaussian Gaussian) => throw new NotImplementedException();
-    protected override void CopyToImpl(Gaussian[] array, int arrayIndex) => throw new NotImplementedException();
 
 
-    protected override IEnumerator<Gaussian> GetTypedEnumeratorImpl() => new GaussianEnumerator(this);
-    protected override IEnumerator GetEnumeratorImpl() => new GaussianEnumerator(this);
-
-
-
+    /// <summary>
+    /// Decompresses this collection into an unpacked gaussian cloud.
+    /// </summary>
+    /// <returns>An decompressed cloud of gaussians.</returns>
     public GaussianCloud Unpack()
     {
         GaussianCloud unpacked = new(Count, SplatMathHelpers.DimForDegree(ShDegree), Flags);

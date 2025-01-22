@@ -2,6 +2,17 @@ using System.Numerics;
 
 namespace Spuzzy.Structs;
 
+/// <summary>
+/// Organizes access to a chunk of data representing a gaussian from a PLY file.
+/// </summary>
+/// <param name="chunk">Data chunk.</param>
+/// <param name="positionIdx">Index of the position components.</param>
+/// <param name="scaleIdx">Index of the scale components.</param>
+/// <param name="rotIdx">Index of the rotation components.</param>
+/// <param name="alphaIdx">Index of the alpha components.</param>
+/// <param name="colorIdx">Index of the color components.</param>
+/// <param name="shIdx">Index of the harmonics components.</param>
+/// <param name="shDim">The dimensions of this gaussian.</param>
 internal readonly ref struct PlyChunker(
     Span<float> chunk,
     Span<int> positionIdx,
@@ -82,11 +93,22 @@ internal readonly ref struct PlyChunker(
                 sh[i] = chunk[shIdx[i]];
             }
 
+            // Transpose the harmonics such that they become vertically-rowed. E.g:
+            // [RGB]
+            // [RGB]
+            // [RGB]
+
+            // It is a mystery as to what [N,S,C] or [N,C,S] ordering is for the harmonics as far as I know.
             return sh.ToNSC();
         }
 
         set
         {
+            // Transpose the harmonics such that they become horizontally-rowed. E.g:
+            // [RRRR]
+            // [GGGG]
+            // [BBBB]
+
             GaussianHarmonics<float> sh = value.ToNCS();
             for (int i = 0; i < shDim * 3; i++)
             {

@@ -10,6 +10,12 @@ public static partial class SplatSerializer
 {
     public const int SPZ_MAX_POINTS = 10000000;
     
+
+    /// <summary>
+    /// Deserializes a gaussian splat from a stream providing an SPZ file.
+    /// </summary>
+    /// <param name="stream">The stream to read the SPZ file from.</param>
+    /// <returns>A compressed cloud of gaussians containing the deserialized data.</returns>
     public static PackedGaussianCloud FromSpz(Stream stream)
     {
         using GZipStream decompressor = new(stream, CompressionMode.Decompress);
@@ -50,6 +56,11 @@ public static partial class SplatSerializer
 
 
 
+    /// <summary>
+    /// Deserializes a gaussian splat from a file path pointing to an SPZ file.
+    /// </summary>
+    /// <param name="filePath">The path to the SPZ file.</param>
+    /// <returns>A compressed cloud of gaussians containing the deserialized data.</returns>
     public static PackedGaussianCloud FromSpz(string filePath)
     {
         using FileStream stream = File.OpenRead(filePath);
@@ -58,16 +69,20 @@ public static partial class SplatSerializer
     }
     
 
-
-    public static void ToSpz(this PackedGaussianCloud cloud, Stream stream)
+    /// <summary>
+    /// Serializes this gaussian splat to a stream and encodes it in the SPZ file format.
+    /// </summary>
+    /// <param name="gaussians">The compressed cloud of gaussians to serialize.</param>
+    /// <param name="stream">The stream to serialize this compressed gaussian cloud to.</param>
+    public static void ToSpz(this PackedGaussianCloud gaussians, Stream stream)
     {
         SpzHeader header = new(
             SpzHeader.MAGIC,
             SpzHeader.VERSION,
-            (uint)cloud.Count,
-            (byte)cloud.ShDegree,
-            (byte)cloud.FractionalBits,
-            cloud.Flags
+            (uint)gaussians.Count,
+            (byte)gaussians.ShDegree,
+            (byte)gaussians.FractionalBits,
+            gaussians.Flags
         );
 
 
@@ -76,28 +91,33 @@ public static partial class SplatSerializer
 
         header.WriteTo(writer);
 
-        Span<byte> posBytes = MemoryMarshal.Cast<FixedVector3, byte>(cloud.positions);
+        Span<byte> posBytes = MemoryMarshal.Cast<FixedVector3, byte>(gaussians.positions);
         writer.Write(posBytes);
 
-        Span<byte> alphaBytes = MemoryMarshal.Cast<QuantizedAlpha, byte>(cloud.alphas);
+        Span<byte> alphaBytes = MemoryMarshal.Cast<QuantizedAlpha, byte>(gaussians.alphas);
         writer.Write(alphaBytes);
         
-        Span<byte> colorBytes = MemoryMarshal.Cast<QuantizedColor, byte>(cloud.colors);
+        Span<byte> colorBytes = MemoryMarshal.Cast<QuantizedColor, byte>(gaussians.colors);
         writer.Write(colorBytes);
 
-        Span<byte> scaleBytes = MemoryMarshal.Cast<QuantizedScale, byte>(cloud.scales);
+        Span<byte> scaleBytes = MemoryMarshal.Cast<QuantizedScale, byte>(gaussians.scales);
         writer.Write(scaleBytes);
 
-        Span<byte> rotationBytes = MemoryMarshal.Cast<QuantizedQuat, byte>(cloud.rotations);
+        Span<byte> rotationBytes = MemoryMarshal.Cast<QuantizedQuat, byte>(gaussians.rotations);
         writer.Write(rotationBytes);
 
-        writer.Write(cloud.sh.Span);
+        writer.Write(gaussians.sh.Span);
     }
 
-    public static void ToSpz(this PackedGaussianCloud cloud, string filePath)
+    /// <summary>
+    /// Serializes this gaussian cloud to file at the specified path in the SPZ file format.
+    /// </summary>
+    /// <param name="gaussians">The compressed cloud of gaussians to serialize.</param>
+    /// <param name="filePath">The path to the file where this gaussian cloud will be written to.</param>
+    public static void ToSpz(this PackedGaussianCloud gaussians, string filePath)
     {
         using FileStream stream = File.OpenWrite(filePath);
 
-        ToSpz(cloud, stream);
+        ToSpz(gaussians, stream);
     }
 }

@@ -6,6 +6,9 @@ using Spuzzy.Structs;
 namespace Spuzzy.Serialization;
 
 
+/// <summary>
+/// Functions for serializing and deserializing gaussian splats.
+/// </summary>
 public static partial class SplatSerializer
 {
     public const string PLY_HEADER = "ply";
@@ -58,7 +61,7 @@ public static partial class SplatSerializer
 
 
     /// <summary>
-    /// Deserializes a gaussian cloud from a stream providing a PLY file.
+    /// Deserializes a gaussian splat from a stream providing a PLY file.
     /// </summary>
     /// <param name="stream">The stream to read the PLY file from.</param>
     /// <returns>A cloud of gaussians containing the deserialized data.</returns>
@@ -176,8 +179,9 @@ public static partial class SplatSerializer
 
 
     /// <summary>
-    /// Serializes this gaussian cloud to a stream and encodes it in the PLY file format.
+    /// Serializes this gaussian splat to a stream and encodes it in the PLY file format.
     /// </summary>
+    /// <param name="gaussians">The compressed cloud of gaussians to serialize.</param>
     /// <param name="stream">The stream to serialize this gaussian cloud to.</param>
     public static void ToPly(this GaussianCloud gaussians, Stream stream)
     {
@@ -189,7 +193,7 @@ public static partial class SplatSerializer
         int splatChunkCount = 17 + shValCount;
 
 
-
+        // Write header info.
         writer.WriteLine("ply");
         writer.WriteLine("format binary_little_endian 1.0");
         writer.WriteLine("element vertex " + num);
@@ -217,8 +221,8 @@ public static partial class SplatSerializer
         writer.WriteLine("end_header");
 
 
-        byte[] splatChunk = new byte[splatChunkCount * Unsafe.SizeOf<float>()];
-        Span<float> curChunk = MemoryMarshal.Cast<byte, float>(splatChunk);
+        Span<float> curChunk = stackalloc float[splatChunkCount];
+        Span<byte> splatChunk = MemoryMarshal.Cast<float, byte>(curChunk);
 
         Span<int> shIdx = stackalloc int[shValCount];
         for (int i = 0; i < shValCount; i++)
@@ -245,8 +249,9 @@ public static partial class SplatSerializer
 
 
     /// <summary>
-    /// Serializes this gaussian cloud to file at the specified path in the PLY file format.
+    /// Serializes this gaussian splat to file at the specified path in the PLY file format.
     /// </summary>
+    /// <param name="gaussians">The cloud of gaussians to serialize.</param>
     /// <param name="filePath">The path to the file where this gaussian cloud will be written to.</param>
     public static void ToPly(this GaussianCloud gaussians, string filePath)
     {

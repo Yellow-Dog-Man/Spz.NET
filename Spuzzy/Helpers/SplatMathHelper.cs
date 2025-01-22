@@ -8,6 +8,15 @@ public static class SplatMathHelpers
     const int SH1_BUCKET_SIZE = 1 << (8 - 5);
     const int SHREST_BUCKET_SIZE = 1 << (8 - 4);
 
+
+    /// <summary>
+    /// Quantizes a gaussian's spherical harmonics for improved compression performance.
+    /// <para>
+    /// 5 bits are used for the first 3 coefficients (9 components), and 4 bits are used for the rest.
+    /// </para>
+    /// </summary>
+    /// <param name="harmonics">The harmonics to quantize.</param>
+    /// <returns>Quantized harmonics.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static GaussianHarmonics<byte> Quantize(this in GaussianHarmonics<float> harmonics)
     {
@@ -24,6 +33,15 @@ public static class SplatMathHelpers
         return quantized;
     }
 
+
+    /// <summary>
+    /// Unquantizes a gaussian's spherical harmonics.
+    /// </summary>
+    /// <para>
+    /// 5 bits are used for the first 3 coefficients (9 components), and 4 bits are used for the rest.
+    /// </para>
+    /// <param name="harmonics">The harmonics to unquantize.</param>
+    /// <returns>Unquantized harmonics.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static GaussianHarmonics<float> Unquantize(this in GaussianHarmonics<byte> harmonics)
     {
@@ -79,6 +97,12 @@ public static class SplatMathHelpers
     }
 
 
+    /// <summary>
+    /// Quantizes a single component of a spherical harmonic's coefficients to a specified bucket size.
+    /// </summary>
+    /// <param name="x">The component value.</param>
+    /// <param name="bucketSize">The size of the bucket to quantize to.</param>
+    /// <returns>A quantized representation of the component.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static byte QuantizeSH(float x, int bucketSize)
     {
@@ -88,6 +112,12 @@ public static class SplatMathHelpers
         return (byte)Clamp(q, 0, 255);
     }
 
+
+    /// <summary>
+    /// Unquantizes a single component of a spherical harmonic's coefficients.
+    /// </summary>
+    /// <param name="x">The quantized value.</param>
+    /// <returns>An unquantized representation of the component.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static float UnquantizeSH(byte x) => (x - 128f) / 128f;
 
@@ -101,6 +131,12 @@ public static class SplatMathHelpers
     public static float InvSigmoid(float x) => (float)Math.Log(x / (1f - x));
 
 
+    /// <summary>
+    /// Gets the number of coefficients for a given degree of spherical harmonics.
+    /// </summary>
+    /// <param name="degree">The degree of spherical harmonics.</param>
+    /// <returns>The dimensions, or number of coefficients for the given degree.</returns>
+    /// <exception cref="NotImplementedException">Thrown when a non-supported degree of spherical harmonic is requested.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int DimForDegree(int degree)
     {
@@ -115,6 +151,11 @@ public static class SplatMathHelpers
     }
 
 
+    /// <summary>
+    /// Gets the degree of spherical harmonics for a given number of coefficients.
+    /// </summary>
+    /// <param name="dim">The coefficients in the spherical harmonic.</param>
+    /// <returns>The corresponding degree.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int DegreeForDim(int dim)
     {
