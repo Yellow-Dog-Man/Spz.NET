@@ -1,47 +1,94 @@
-﻿using System.IO.Compression;
-using System.Numerics;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography.X509Certificates;
+﻿using System.CommandLine;
 using SharPZ;
 
 namespace SharPZ.Demo;
 
 class Program
 {
-    static void Main(string[] args)
+    public static string[] SUPPORTED_EXTENSIONS = [".ply", ".spz"];
+
+    static int Main(string[] args)
     {
-        args = args.Length > 0 ? args : ["./input.spz"];
-        string input;
-        if (args.Length > 0)
-            input = Path.GetFullPath(args[0]);
+        RootCommand root = new("Demonstrates converting between .ply and .spz files.");
+
+        Option<string> input = new(
+            ["--input", "-i"],
+            "Path to the input file (.ply or .spz supported)");
+        input.IsRequired = true;
+        root.AddOption(input);
+        
+        Option<string> output = new(
+            ["--output", "-o"],
+            () => "./output.spz",
+            "Path to the output file (.ply or .spz supported)");
+        root.AddOption(output);
+
+        root.SetHandler(Execute, input, output);
+
+        return root.Invoke(args);
+    }
+
+    public static void Execute(string inputFile, string outputFile)
+    {
+        inputFile = Path.GetFullPath(inputFile);
+        outputFile = Path.GetFullPath(outputFile);
+
+        if (!Directory.Exists(Path.GetDirectoryName(inputFile)))
+        {
+            Console.WriteLine("The specified path to the input file does not exist.");
+        }
+
+        if (!File.Exists(inputFile))
+        {
+            Console.WriteLine("The input file does not exist within the specified path.");
+            return;
+        }
+
+
+        if (!Directory.Exists(Path.GetDirectoryName(outputFile)))
+        {
+            Console.WriteLine("The specified path to the output file does not exist.");
+        }
+        
+
+        string inputExtension = Path.GetExtension(inputFile);
+        string outputExtension = Path.GetExtension(outputFile);
+
+        if (!SUPPORTED_EXTENSIONS.Contains(inputExtension))
+        {
+            Console.WriteLine($"Input file has unsupported extension: {inputExtension}");
+            return;
+        }
+
+        if (!SUPPORTED_EXTENSIONS.Contains(outputExtension))
+        {
+            Console.WriteLine($"Output file has unsupported extension: {outputExtension}");
+            return;
+        }
+
+
+        GaussianCloud? cloud;
+        if (inputExtension == ".ply")
+        {
+            cloud = SplatSerializer.FromPly(inputFile);
+        }
+        else if (inputExtension == ".spz")
+        {
+            var spz = SplatSerializer.FromSpz(inputFile);
+            cloud = spz.Unpack();
+        }
         else
+            throw new NullReferenceException($"Something terrible has happened and I think you should panic.");
+
+        
+        if (outputExtension == ".ply")
         {
-            Console.WriteLine("An input file is required.");
-            return;
+            SplatSerializer.ToPly(cloud, outputFile);
         }
-            
-
-        if (!Directory.Exists(Path.GetDirectoryName(input)))
+        else if (outputExtension == ".spz")
         {
-            Console.WriteLine("Path doesn't exist!");
-            return;
+            SplatSerializer.ToSpz(cloud.Pack(), outputFile);
         }
-
-        string extension = Path.GetExtension(input);
-
-        if (extension == ".ply")
-        {
-            var cloud = SplatSerializer.FromPly(input);
-            PackedGaussianCloud packed = cloud.Pack();
-
-            packed.Unpack().ToPly("./output.ply");
-        }
-        else if (extension == ".spz")
-        {
-            var cloud = SplatSerializer.FromSpz(input);
-            cloud.Unpack().ToPly("./output.ply");
-        }
-
 
     }
 }
