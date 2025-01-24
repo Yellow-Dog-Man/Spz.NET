@@ -1,0 +1,29 @@
+name: "Publish Spz.NET"
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+
+jobs:
+  publish:
+    strategy:
+      matrix:
+        osver: [ubuntu-latest, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.osver }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set distdir
+        run: |
+          echo "distdir=${{ github.workspace  }}/nuget" >> "$GITHUB_ENV"
+
+      - name: Build project
+        run: |
+          dotnet pack -c Release -o ${{ env.distdir }} ${{ github.workspace  }}/Spz.NET/
+
+      - name: Publish to NuGet
+        run: |
+          dotnet nuget push ${{ env.distdir }} *.nupkg --api-key ${{ secrets.GH_TOKEN }} --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
