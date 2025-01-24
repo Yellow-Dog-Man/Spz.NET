@@ -1,9 +1,9 @@
 name: "Publish Spz.NET"
 
 on:
-  release:
-    types: [published]
-  workflow_dispatch:
+  push:
+#  release:
+#    types: [published]
 
 
 jobs:
