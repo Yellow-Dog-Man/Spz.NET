@@ -1,9 +1,8 @@
 name: "Publish Spz.NET"
 
 on:
-  push:
-#  release:
-#    types: [published]
+  release:
+    types: [published]
 
 
 jobs:
