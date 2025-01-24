@@ -11,29 +11,24 @@ on:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        osver: [ubuntu-latest, ubuntu-24.04-arm]
-    runs-on: ${{ matrix.osver }}
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set dist name
         run: |
-          if ${{ matrix.osver == 'ubuntu-24.04-arm' }}; then
-            echo "distname=spz-net-arm" >> "$GITHUB_ENV"
-          else
-            echo "distname=spz-net" >> "$GITHUB_ENV"
-          fi
           echo "distdir=${{ github.workspace  }}/bin" >> "$GITHUB_ENV"
 
       - name: Build project
         run: |
-          dotnet publish -c Release -o ${{ env.distdir }} ${{ github.workspace  }}/Spz.NET/
+          dotnet publish -c Release -o ${{ env.distdir }} --runtime win-x64 ${{ github.workspace  }}/Spz.NET/
+          dotnet publish -c Release -o ${{ env.distdir }} --runtime linux-x64 ${{ github.workspace  }}/Spz.NET/
+          dotnet publish -c Release -o ${{ env.distdir }} --runtime win-arm64 ${{ github.workspace  }}/Spz.NET/
+          dotnet publish -c Release -o ${{ env.distdir }} --runtime linux-arm64 ${{ github.workspace  }}/Spz.NET/
       
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.distname }}
+          name: spz-net
           path: ${{ env.distdir }}
