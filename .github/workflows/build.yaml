@@ -16,19 +16,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set dist name
-        run: |
-          echo "distdir=${{ github.workspace  }}/bin" >> "$GITHUB_ENV"
-
       - name: Build project
         run: |
-          dotnet publish -c Release -o ${{ env.distdir }} --runtime win-x64 ${{ github.workspace  }}/Spz.NET/
-          dotnet publish -c Release -o ${{ env.distdir }} --runtime linux-x64 ${{ github.workspace  }}/Spz.NET/
-          dotnet publish -c Release -o ${{ env.distdir }} --runtime win-arm64 ${{ github.workspace  }}/Spz.NET/
-          dotnet publish -c Release -o ${{ env.distdir }} --runtime linux-arm64 ${{ github.workspace  }}/Spz.NET/
+          dotnet publish -c Release --runtime win-x64 ${{ github.workspace  }}/Spz.NET/
+          dotnet publish -c Release --runtime linux-x64 ${{ github.workspace  }}/Spz.NET/
+          dotnet publish -c Release --runtime win-arm64 ${{ github.workspace  }}/Spz.NET/
+          dotnet publish -c Release --runtime linux-arm64 ${{ github.workspace  }}/Spz.NET/
       
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: spz-net
-          path: ${{ env.distdir }}
+          path: ${{ github.workspace  }}/Spz.NET/bin/Release
