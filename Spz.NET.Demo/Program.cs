@@ -1,4 +1,6 @@
-﻿using System.CommandLine;
+using System.CommandLine;
+using ByteSizeLib;
+using Spectre.Console;
 using Spz.NET;
 using Spz.NET.Serialization;
 
@@ -18,9 +20,8 @@ class Program
         input.IsRequired = true;
         root.AddOption(input);
         
-        Option<string> output = new(
+        Option<string?> output = new(
             ["--output", "-o"],
-            () => "./output.spz",
             "Path to the output file (.ply or .spz supported)");
         root.AddOption(output);
 
@@ -29,10 +30,10 @@ class Program
         return root.Invoke(args);
     }
 
-    public static void Execute(string inputFile, string outputFile)
+    public static void Execute(string inputFile, string? outputFile)
     {
         inputFile = Path.GetFullPath(inputFile);
-        outputFile = Path.GetFullPath(outputFile);
+        outputFile = Path.GetFullPath(outputFile ?? Path.GetFileNameWithoutExtension(inputFile) + (Path.GetExtension(inputFile) == ".ply" ? ".spz" : ".ply"));
 
         if (!Directory.Exists(Path.GetDirectoryName(inputFile)))
         {
@@ -69,27 +70,89 @@ class Program
 
 
         GaussianCloud? cloud;
-        if (inputExtension == ".ply")
-        {
-            cloud = SplatSerializer.FromPly(inputFile);
-        }
-        else if (inputExtension == ".spz")
-        {
-            var spz = SplatSerializer.FromSpz(inputFile);
-            cloud = spz.Unpack();
-        }
-        else
-            throw new NullReferenceException($"Something terrible has happened and I think you should panic.");
 
-        
-        if (outputExtension == ".ply")
-        {
-            SplatSerializer.ToPly(cloud, outputFile);
-        }
-        else if (outputExtension == ".spz")
-        {
-            SplatSerializer.ToSpz(cloud.Pack(), outputFile);
-        }
+        ByteSize inputFileSize = default;
+        ByteSize outputFileSize = default;
 
+        AnsiConsole.Status().Start("Processing...", ctx =>
+        {
+            if (inputExtension == ".ply")
+            {
+                DemoLogger.WriteLine("Reading ply...");
+                cloud = SplatSerializer.FromPly(inputFile);
+            }
+            else if (inputExtension == ".spz")
+            {
+                DemoLogger.WriteLine("Decompressing spz...");
+                var spz = SplatSerializer.FromSpz(inputFile);
+                cloud = spz.Unpack();
+            }
+            else
+                throw new NullReferenceException($"Something terrible has happened and I think you should panic.");
+
+            
+            if (outputExtension == ".ply")
+            {
+                DemoLogger.WriteLine("Writing ply...");
+                SplatSerializer.ToPly(cloud, outputFile);
+            }
+            else if (outputExtension == ".spz")
+            {
+                DemoLogger.WriteLine("Compressing spz...");
+                SplatSerializer.ToSpz(cloud.Pack(), outputFile);
+            }
+
+            FileInfo inputInfo = new(inputFile);
+            FileInfo outputInfo = new(outputFile);
+
+            inputFileSize = ByteSize.FromBytes(inputInfo.Length);
+            outputFileSize = ByteSize.FromBytes(outputInfo.Length);
+        });
+
+        ByteSize outputDiff = outputFileSize - inputFileSize;
+        int diffSign = Math.Sign(outputDiff.Bytes);
+
+        string compressMsg = diffSign switch
+        {
+            -1 => "[green bold]Compressed[/]",
+            0  => "[yellow bold]No size difference[/]",
+            1  => "[red bold]Decompressed[/]",
+            _  => ""
+        };
+
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine($"""
+            [green bold]:check_mark:[/]  Done!
+
+            Wrote file: "{outputFile}"
+
+            Input size: {inputFileSize}
+            Output size: {outputFileSize}
+
+            {compressMsg}: {outputDiff} ({Math.Abs(1.0 - (outputFileSize / inputFileSize).Bytes):p2})
+            """);
+    }
+}
+
+
+
+public static class DemoLogger
+{
+    public static string LogPrefix(int logLevel)
+    {
+        return logLevel switch
+        {
+            0 => "[green bold][[INFO]][/]",
+            1 => "[yellow bold][[WARN]][/]",
+            2 => "[red bold][[ERROR]][/]",
+            _ => throw new NotImplementedException("Bad log level. >:(")
+        };
+    }
+
+
+    public static void WriteLine(object? msg, int logLevel = 0)
+    {
+        string? msgStr = msg?.ToString();
+        AnsiConsole.MarkupLine($"{LogPrefix(logLevel)} {msgStr?.EscapeMarkup()}");
     }
 }
