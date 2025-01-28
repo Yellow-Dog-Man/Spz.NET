@@ -1,0 +1,30 @@
+name: "Build"
+
+on:
+  push:
+    paths_ignore:
+      - '**/*.md'
+  pull_request:
+    paths_ignore:
+      - '**/*.md'
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build project
+        run: |
+          dotnet publish -c Release --runtime win-x64 ${{ github.workspace  }}/Spz.NET/
+          dotnet publish -c Release --runtime linux-x64 ${{ github.workspace  }}/Spz.NET/
+          dotnet publish -c Release --runtime win-arm64 ${{ github.workspace  }}/Spz.NET/
+          dotnet publish -c Release --runtime linux-arm64 ${{ github.workspace  }}/Spz.NET/
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: spz-net
+          path: ${{ github.workspace  }}/Spz.NET/bin/Release
