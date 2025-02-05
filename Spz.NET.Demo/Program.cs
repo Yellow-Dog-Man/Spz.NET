@@ -1,4 +1,4 @@
-using System.CommandLine;
+﻿using System.CommandLine;
 using ByteSizeLib;
 using Spectre.Console;
 using Spz.NET;
@@ -84,8 +84,7 @@ class Program
             else if (inputExtension == ".spz")
             {
                 DemoLogger.WriteLine("Decompressing spz...");
-                var spz = SplatSerializer.FromSpz(inputFile);
-                cloud = spz.Unpack();
+                cloud = SplatSerializer.FromSpz(inputFile);
             }
             else
                 throw new NullReferenceException($"Something terrible has happened and I think you should panic.");
@@ -99,7 +98,7 @@ class Program
             else if (outputExtension == ".spz")
             {
                 DemoLogger.WriteLine("Compressing spz...");
-                SplatSerializer.ToSpz(cloud.Pack(), outputFile);
+                SplatSerializer.ToSpz(cloud, outputFile);
             }
 
             FileInfo inputInfo = new(inputFile);
@@ -131,6 +130,9 @@ class Program
 
             {compressMsg}: {outputDiff} ({Math.Abs(1.0 - (outputFileSize / inputFileSize).Bytes):p2})
             """);
+        
+        AnsiConsole.WriteLine("Press any key to exit.");
+        Console.ReadKey();
     }
 }
 

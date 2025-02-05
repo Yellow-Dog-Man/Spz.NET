@@ -18,19 +18,16 @@ public static class SplatMathHelpers
     /// <param name="harmonics">The harmonics to quantize.</param>
     /// <returns>Quantized harmonics.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static GaussianHarmonics<byte> Quantize(this in GaussianHarmonics<float> harmonics)
+    public static void Quantize(this in GaussianHarmonics harmonics, Span<byte> quantized, int offset = 0, int count = GaussianHarmonics.COEFFICIENT_COMPONENTS)
     {
-        GaussianHarmonics<byte> quantized = new();
-        
-        for (int i = 0; i < GaussianHarmonics<byte>.COEFFICIENT_COMPONENTS; i++)
+        int i = count;
+        while (i-- > 0)
         {
             if (i < 9)
-                quantized[i] = QuantizeSH(harmonics[i], SH1_BUCKET_SIZE);
+                quantized[offset + i] = QuantizeSH(harmonics[i], SH1_BUCKET_SIZE);
             else
-                quantized[i] = QuantizeSH(harmonics[i], SHREST_BUCKET_SIZE);
+                quantized[offset + i] = QuantizeSH(harmonics[i], SHREST_BUCKET_SIZE);
         }
-
-        return quantized;
     }
 
 
@@ -43,36 +40,13 @@ public static class SplatMathHelpers
     /// <param name="harmonics">The harmonics to unquantize.</param>
     /// <returns>Unquantized harmonics.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static GaussianHarmonics<float> Unquantize(this in GaussianHarmonics<byte> harmonics)
+    public static void Unquantize(this Span<byte> quantized, out GaussianHarmonics harmonics, int offset = 0, int count = GaussianHarmonics.COEFFICIENT_COMPONENTS)
     {
-        GaussianHarmonics<float> unquantized = new();
-        
-        for (int i = 0; i < GaussianHarmonics<byte>.COEFFICIENT_COMPONENTS; i++)
-            unquantized[i] = UnquantizeSH(harmonics[i]);
+        harmonics = default;
 
-        return unquantized;
-    }
-
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Quantize(this Span<float> harmonics, Span<byte> quantized)
-    {
-        int i = harmonics.Length;
+        int i = count;
         while (i-- > 0)
-        {
-            if (i < 9)
-                quantized[i] = QuantizeSH(harmonics[i], SH1_BUCKET_SIZE);
-            else
-                quantized[i] = QuantizeSH(harmonics[i], SHREST_BUCKET_SIZE);
-        }
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Unquantize(this Span<byte> quantized, Span<float> harmonics)
-    {   
-        int i = quantized.Length;
-        while(i-- > 0)
-            harmonics[i] = UnquantizeSH(quantized[i]);
+            harmonics[i] = UnquantizeSH(quantized[offset + i]);
     }
 
 

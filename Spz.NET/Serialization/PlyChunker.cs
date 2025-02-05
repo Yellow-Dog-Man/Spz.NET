@@ -82,11 +82,11 @@ internal readonly ref struct PlyChunker(
         set => chunk[alphaIdx] = value;
     }
 
-    public readonly GaussianHarmonics<float> Sh
+    public readonly GaussianHarmonics Sh
     {
         get
         {
-            GaussianHarmonics<float> sh = new();
+            GaussianHarmonics sh = new();
 
             for (int i = 0; i < shDim * 3; i++)
             {
@@ -109,7 +109,7 @@ internal readonly ref struct PlyChunker(
             // [GGGG]
             // [BBBB]
 
-            GaussianHarmonics<float> sh = value.ToNCS();
+            GaussianHarmonics sh = value.ToNCS();
             for (int i = 0; i < shDim * 3; i++)
             {
                 chunk[shIdx[i]] = sh[i];

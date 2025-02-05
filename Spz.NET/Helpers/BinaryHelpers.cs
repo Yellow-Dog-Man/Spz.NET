@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Spz.NET.Helpers;
@@ -74,6 +75,7 @@ public static class BinaryHelpers
     // }
 
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Read(this BinaryReader reader, Span<byte> bytes)
     {
         byte[] buffer = pool.Rent(BUFFER_CHUNK_COUNT);
@@ -95,7 +97,7 @@ public static class BinaryHelpers
     }
 
 
-
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Write(this BinaryWriter writer, Span<byte> bytes)
     {
         byte[] buffer = pool.Rent(BUFFER_CHUNK_COUNT);

@@ -9,302 +9,305 @@ namespace Spz.NET;
 /// Represents the spherical harmonics of a given gaussian.
 /// </summary>
 /// <typeparam name="T">The type to use for each coefficient's components.</typeparam>
-public struct GaussianHarmonics<T> : IEquatable<GaussianHarmonics<T>>
-    where T : unmanaged
+public struct GaussianHarmonics : IEquatable<GaussianHarmonics>
 {
     public const int COEFFICIENT_LENGTH = 15;
     public const int COEFFICIENT_COMPONENTS = 45;
 
-    public unsafe T this[int index]
+    public readonly unsafe float this[int index]
     {
-        readonly get => index switch
-        {
-            0 => Component0,
-            1 => Component1,
-            2 => Component2,
-            3 => Component3,
-            4 => Component4,
-            5 => Component5,
-            6 => Component6,
-            7 => Component7,
-            8 => Component8,
-            9 => Component9,
-            10 => Component10,
-            11 => Component11,
-            12 => Component12,
-            13 => Component13,
-            14 => Component14,
-            15 => Component15,
-            16 => Component16,
-            17 => Component17,
-            18 => Component18,
-            19 => Component19,
-            20 => Component20,
-            21 => Component21,
-            22 => Component22,
-            23 => Component23,
-            24 => Component24,
-            25 => Component25,
-            26 => Component26,
-            27 => Component27,
-            28 => Component28,
-            29 => Component29,
-            30 => Component30,
-            31 => Component31,
-            32 => Component32,
-            33 => Component33,
-            34 => Component34,
-            35 => Component35,
-            36 => Component36,
-            37 => Component37,
-            38 => Component38,
-            39 => Component39,
-            40 => Component40,
-            41 => Component41,
-            42 => Component42,
-            43 => Component43,
-            44 => Component44,
-            _ => throw new IndexOutOfRangeException()
-        };
-    
-        set
-        {
-            switch (index)
-            {
-                case 0:
-                    Component0 = value;
-                    break;
-                case 1:
-                    Component1 = value;
-                    break;
-                case 2:
-                    Component2 = value;
-                    break;
-                case 3:
-                    Component3 = value;
-                    break;
-                case 4:
-                    Component4 = value;
-                    break;
-                case 5:
-                    Component5 = value;
-                    break;
-                case 6:
-                    Component6 = value;
-                    break;
-                case 7:
-                    Component7 = value;
-                    break;
-                case 8:
-                    Component8 = value;
-                    break;
-                case 9:
-                    Component9 = value;
-                    break;
-                case 10:
-                    Component10 = value;
-                    break;
-                case 11:
-                    Component11 = value;
-                    break;
-                case 12:
-                    Component12 = value;
-                    break;
-                case 13:
-                    Component13 = value;
-                    break;
-                case 14:
-                    Component14 = value;
-                    break;
-                case 15:
-                    Component15 = value;
-                    break;
-                case 16:
-                    Component16 = value;
-                    break;
-                case 17:
-                    Component17 = value;
-                    break;
-                case 18:
-                    Component18 = value;
-                    break;
-                case 19:
-                    Component19 = value;
-                    break;
-                case 20:
-                    Component20 = value;
-                    break;
-                case 21:
-                    Component21 = value;
-                    break;
-                case 22:
-                    Component22 = value;
-                    break;
-                case 23:
-                    Component23 = value;
-                    break;
-                case 24:
-                    Component24 = value;
-                    break;
-                case 25:
-                    Component25 = value;
-                    break;
-                case 26:
-                    Component26 = value;
-                    break;
-                case 27:
-                    Component27 = value;
-                    break;
-                case 28:
-                    Component28 = value;
-                    break;
-                case 29:
-                    Component29 = value;
-                    break;
-                case 30:
-                    Component30 = value;
-                    break;
-                case 31:
-                    Component31 = value;
-                    break;
-                case 32:
-                    Component32 = value;
-                    break;
-                case 33:
-                    Component33 = value;
-                    break;
-                case 34:
-                    Component34 = value;
-                    break;
-                case 35:
-                    Component35 = value;
-                    break;
-                case 36:
-                    Component36 = value;
-                    break;
-                case 37:
-                    Component37 = value;
-                    break;
-                case 38:
-                    Component38 = value;
-                    break;
-                case 39:
-                    Component39 = value;
-                    break;
-                case 40:
-                    Component40 = value;
-                    break;
-                case 41:
-                    Component41 = value;
-                    break;
-                case 42:
-                    Component42 = value;
-                    break;
-                case 43:
-                    Component43 = value;
-                    break;
-                case 44:
-                    Component44 = value;
-                    break;
-                default:
-                    throw new IndexOutOfRangeException();
-            }
-        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => GetElement(in this, index % 45);
+
+        // index switch
+        // {
+        //     0 => Component0,
+        //     1 => Component1,
+        //     2 => Component2,
+        //     3 => Component3,
+        //     4 => Component4,
+        //     5 => Component5,
+        //     6 => Component6,
+        //     7 => Component7,
+        //     8 => Component8,
+        //     9 => Component9,
+        //     10 => Component10,
+        //     11 => Component11,
+        //     12 => Component12,
+        //     13 => Component13,
+        //     14 => Component14,
+        //     15 => Component15,
+        //     16 => Component16,
+        //     17 => Component17,
+        //     18 => Component18,
+        //     19 => Component19,
+        //     20 => Component20,
+        //     21 => Component21,
+        //     22 => Component22,
+        //     23 => Component23,
+        //     24 => Component24,
+        //     25 => Component25,
+        //     26 => Component26,
+        //     27 => Component27,
+        //     28 => Component28,
+        //     29 => Component29,
+        //     30 => Component30,
+        //     31 => Component31,
+        //     32 => Component32,
+        //     33 => Component33,
+        //     34 => Component34,
+        //     35 => Component35,
+        //     36 => Component36,
+        //     37 => Component37,
+        //     38 => Component38,
+        //     39 => Component39,
+        //     40 => Component40,
+        //     41 => Component41,
+        //     42 => Component42,
+        //     43 => Component43,
+        //     44 => Component44,
+        //     // _ => throw new IndexOutOfRangeException()
+        // };
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        set => GetElement(in this, index % 45) = value;
+        // {
+            // switch (index)
+            // {
+            //     case 0:
+            //         Component0 = value;
+            //         break;
+            //     case 1:
+            //         Component1 = value;
+            //         break;
+            //     case 2:
+            //         Component2 = value;
+            //         break;
+            //     case 3:
+            //         Component3 = value;
+            //         break;
+            //     case 4:
+            //         Component4 = value;
+            //         break;
+            //     case 5:
+            //         Component5 = value;
+            //         break;
+            //     case 6:
+            //         Component6 = value;
+            //         break;
+            //     case 7:
+            //         Component7 = value;
+            //         break;
+            //     case 8:
+            //         Component8 = value;
+            //         break;
+            //     case 9:
+            //         Component9 = value;
+            //         break;
+            //     case 10:
+            //         Component10 = value;
+            //         break;
+            //     case 11:
+            //         Component11 = value;
+            //         break;
+            //     case 12:
+            //         Component12 = value;
+            //         break;
+            //     case 13:
+            //         Component13 = value;
+            //         break;
+            //     case 14:
+            //         Component14 = value;
+            //         break;
+            //     case 15:
+            //         Component15 = value;
+            //         break;
+            //     case 16:
+            //         Component16 = value;
+            //         break;
+            //     case 17:
+            //         Component17 = value;
+            //         break;
+            //     case 18:
+            //         Component18 = value;
+            //         break;
+            //     case 19:
+            //         Component19 = value;
+            //         break;
+            //     case 20:
+            //         Component20 = value;
+            //         break;
+            //     case 21:
+            //         Component21 = value;
+            //         break;
+            //     case 22:
+            //         Component22 = value;
+            //         break;
+            //     case 23:
+            //         Component23 = value;
+            //         break;
+            //     case 24:
+            //         Component24 = value;
+            //         break;
+            //     case 25:
+            //         Component25 = value;
+            //         break;
+            //     case 26:
+            //         Component26 = value;
+            //         break;
+            //     case 27:
+            //         Component27 = value;
+            //         break;
+            //     case 28:
+            //         Component28 = value;
+            //         break;
+            //     case 29:
+            //         Component29 = value;
+            //         break;
+            //     case 30:
+            //         Component30 = value;
+            //         break;
+            //     case 31:
+            //         Component31 = value;
+            //         break;
+            //     case 32:
+            //         Component32 = value;
+            //         break;
+            //     case 33:
+            //         Component33 = value;
+            //         break;
+            //     case 34:
+            //         Component34 = value;
+            //         break;
+            //     case 35:
+            //         Component35 = value;
+            //         break;
+            //     case 36:
+            //         Component36 = value;
+            //         break;
+            //     case 37:
+            //         Component37 = value;
+            //         break;
+            //     case 38:
+            //         Component38 = value;
+            //         break;
+            //     case 39:
+            //         Component39 = value;
+            //         break;
+            //     case 40:
+            //         Component40 = value;
+            //         break;
+            //     case 41:
+            //         Component41 = value;
+            //         break;
+            //     case 42:
+            //         Component42 = value;
+            //         break;
+            //     case 43:
+            //         Component43 = value;
+            //         break;
+            //     case 44:
+            //         Component44 = value;
+            //         break;
+            //     default:
+            //         throw new IndexOutOfRangeException();
+            // }
+        // }
     }
 
-    public T Component0;
-    public T Component1;
-    public T Component2;
-    public T Component3;
-    public T Component4;
-    public T Component5;
-    public T Component6;
-    public T Component7;
-    public T Component8;
-    public T Component9;
-    public T Component10;
-    public T Component11;
-    public T Component12;
-    public T Component13;
-    public T Component14;
-    public T Component15;
-    public T Component16;
-    public T Component17;
-    public T Component18;
-    public T Component19;
-    public T Component20;
-    public T Component21;
-    public T Component22;
-    public T Component23;
-    public T Component24;
-    public T Component25;
-    public T Component26;
-    public T Component27;
-    public T Component28;
-    public T Component29;
-    public T Component30;
-    public T Component31;
-    public T Component32;
-    public T Component33;
-    public T Component34;
-    public T Component35;
-    public T Component36;
-    public T Component37;
-    public T Component38;
-    public T Component39;
-    public T Component40;
-    public T Component41;
-    public T Component42;
-    public T Component43;
-    public T Component44;
+    public float Component0;
+    public float Component1;
+    public float Component2;
+    public float Component3;
+    public float Component4;
+    public float Component5;
+    public float Component6;
+    public float Component7;
+    public float Component8;
+    public float Component9;
+    public float Component10;
+    public float Component11;
+    public float Component12;
+    public float Component13;
+    public float Component14;
+    public float Component15;
+    public float Component16;
+    public float Component17;
+    public float Component18;
+    public float Component19;
+    public float Component20;
+    public float Component21;
+    public float Component22;
+    public float Component23;
+    public float Component24;
+    public float Component25;
+    public float Component26;
+    public float Component27;
+    public float Component28;
+    public float Component29;
+    public float Component30;
+    public float Component31;
+    public float Component32;
+    public float Component33;
+    public float Component34;
+    public float Component35;
+    public float Component36;
+    public float Component37;
+    public float Component38;
+    public float Component39;
+    public float Component40;
+    public float Component41;
+    public float Component42;
+    public float Component43;
+    public float Component44;
 
 
     public unsafe GaussianHarmonics(
-        T component0,
-        T component1,
-        T component2,
-        T component3,
-        T component4,
-        T component5,
-        T component6,
-        T component7,
-        T component8,
-        T component9,
-        T component10,
-        T component11,
-        T component12,
-        T component13,
-        T component14,
-        T component15,
-        T component16,
-        T component17,
-        T component18,
-        T component19,
-        T component20,
-        T component21,
-        T component22,
-        T component23,
-        T component24,
-        T component25,
-        T component26,
-        T component27,
-        T component28,
-        T component29,
-        T component30,
-        T component31,
-        T component32,
-        T component33,
-        T component34,
-        T component35,
-        T component36,
-        T component37,
-        T component38,
-        T component39,
-        T component40,
-        T component41,
-        T component42,
-        T component43,
-        T component44
+        float component0,
+        float component1,
+        float component2,
+        float component3,
+        float component4,
+        float component5,
+        float component6,
+        float component7,
+        float component8,
+        float component9,
+        float component10,
+        float component11,
+        float component12,
+        float component13,
+        float component14,
+        float component15,
+        float component16,
+        float component17,
+        float component18,
+        float component19,
+        float component20,
+        float component21,
+        float component22,
+        float component23,
+        float component24,
+        float component25,
+        float component26,
+        float component27,
+        float component28,
+        float component29,
+        float component30,
+        float component31,
+        float component32,
+        float component33,
+        float component34,
+        float component35,
+        float component36,
+        float component37,
+        float component38,
+        float component39,
+        float component40,
+        float component41,
+        float component42,
+        float component43,
+        float component44
     )
     {
         Component0 = component0;
@@ -358,17 +361,17 @@ public struct GaussianHarmonics<T> : IEquatable<GaussianHarmonics<T>>
     /// <summary>
     /// Transposes the harmonics such that each row of components corresponds to a given color channel. Ex:
     /// <para>
-    /// [RRRR]
+    /// [RRR]
     /// </para>
     /// <para>
-    /// [GGGG]
+    /// [GGG]
     /// </para>
     /// <para>
-    /// [BBBB]
+    /// [BBB]
     /// </para>
     /// </summary>
     /// <returns>The transposed harmonics.</returns>
-    public readonly GaussianHarmonics<T> ToNCS()
+    public readonly GaussianHarmonics ToNCS()
     {
         return new(
             Component0,  Component3,  Component6,  Component9,  Component12, Component15, Component18, Component21, Component24, Component27, Component30, Component33, Component36, Component39, Component42,
@@ -390,7 +393,7 @@ public struct GaussianHarmonics<T> : IEquatable<GaussianHarmonics<T>>
     /// </para>
     /// </summary>
     /// <returns>The transposed harmonics.</returns>
-    public readonly GaussianHarmonics<T> ToNSC()
+    public readonly GaussianHarmonics ToNSC()
     {
         return new(
             Component0,  Component15, Component30,
@@ -411,32 +414,7 @@ public struct GaussianHarmonics<T> : IEquatable<GaussianHarmonics<T>>
         );
     }
 
-
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static GaussianHarmonics<T> From(Span<T> values)
-    {
-        GaussianHarmonics<T> fromSpan = new();
-
-        int i = values.Length;
-
-        while (i-- > 0)
-            fromSpan[i] = values[i];
-        
-        return fromSpan;
-    }
-
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly void To(Span<T> values)
-    {
-        int i = values.Length;
-
-        while (i-- > 0)
-            values[i] = this[i];
-    }
-
-    public readonly bool Equals(GaussianHarmonics<T> other)
+    public readonly bool Equals(GaussianHarmonics other)
     {
         bool condition = true;
         int i = COEFFICIENT_COMPONENTS;
@@ -447,7 +425,21 @@ public struct GaussianHarmonics<T> : IEquatable<GaussianHarmonics<T>>
     }
 
 
-    public static bool operator ==(in GaussianHarmonics<T> left, in GaussianHarmonics<T> right) => left.Equals(right);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ref float GetElement(in GaussianHarmonics harmonics, int index)
+    {
+        return ref Unsafe.Add(ref GetFirst(in harmonics), index);
+    }
 
-    public static bool operator !=(in GaussianHarmonics<T> left, in GaussianHarmonics<T> right) => !left.Equals(right);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ref float GetFirst(in GaussianHarmonics harmonics)
+    {
+        return ref Unsafe.AsRef(in harmonics.Component0);
+    }
+
+
+    public static bool operator ==(in GaussianHarmonics left, in GaussianHarmonics right) => left.Equals(right);
+
+    public static bool operator !=(in GaussianHarmonics left, in GaussianHarmonics right) => !(left == right);
 }

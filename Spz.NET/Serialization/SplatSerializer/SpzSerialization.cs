@@ -1,5 +1,6 @@
 using System.Buffers;
 using System.IO.Compression;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Spz.NET.Helpers;
 using Spz.NET.Structs;
@@ -16,40 +17,58 @@ public static partial class SplatSerializer
     /// </summary>
     /// <param name="stream">The stream to read the SPZ file from.</param>
     /// <returns>A compressed cloud of gaussians containing the deserialized data.</returns>
-    public static PackedGaussianCloud FromSpz(Stream stream)
+    public static GaussianCloud FromSpz(Stream stream)
     {
         using GZipStream decompressor = new(stream, CompressionMode.Decompress);
         using BinaryReader reader = new(decompressor);
 
 
         SpzHeader header = SpzHeader.ReadFrom(reader);
-        int numPoints = (int)header.NumPoints;
+        int count = (int)header.NumPoints;
         int shDim = SplatMathHelpers.DimForDegree(header.ShDegree);
-        PackedGaussianCloud cloud = new(numPoints, shDim, header.FractionalBits, header.Flags);
+        int shCount = shDim * 3;
+        GaussianCloud cloud = new(count, shDim, header.Flags);
 
 
-        // Chunk of the biggest size of the largest data type.
+        using QuickArray<FixedVector3> positions = new(count);
+        using QuickArray<QuantizedAlpha> alphas = new(count);
+        using QuickArray<QuantizedColor> colors = new(count);
+        using QuickArray<QuantizedScale> scales = new(count);
+        using QuickArray<QuantizedQuat>  rotations = new(count);
+        using QuickArray<byte> harmonics = new(count * shDim * 3);
 
-        Span<byte> cloudPosBytes = MemoryMarshal.Cast<FixedVector3, byte>(cloud.positions);
-        reader.Read(cloudPosBytes);
-        
-    
-        Span<byte> cloudAlphaBytes = MemoryMarshal.Cast<QuantizedAlpha, byte>(cloud.alphas);
-        reader.Read(cloudAlphaBytes);
+        Span<FixedVector3> posSpan = positions.Span;
+        Span<QuantizedAlpha> alphaSpan = alphas.Span;
+        Span<QuantizedColor> colorSpan = colors.Span;
+        Span<QuantizedScale> scaleSpan = scales.Span;
+        Span<QuantizedQuat> rotSpan = rotations.Span;
+        Span<byte> harmonicSpan = harmonics.Span;
+
+        reader.Read(positions.Bytes);
+        reader.Read(alphas.Bytes);
+        reader.Read(colors.Bytes);
+        reader.Read(scales.Bytes);
+        reader.Read(rotations.Bytes);
+        reader.Read(harmonics.Bytes);
 
 
-        Span<byte> cloudColorBytes = MemoryMarshal.Cast<QuantizedColor, byte>(cloud.colors);
-        reader.Read(cloudColorBytes);
-        
+        int i = count;
+        while (i-- > 0)
+        {
+            int offset = i * shCount;
+            harmonicSpan.Unquantize(out GaussianHarmonics gaussianHarmonics, offset, shCount);
 
-        Span<byte> cloudScaleBytes = MemoryMarshal.Cast<QuantizedScale, byte>(cloud.scales);
-        reader.Read(cloudScaleBytes);
+            cloud[i] = new(
+                posSpan[i].ToVector3(12),
+                scaleSpan[i],
+                rotSpan[i],
+                alphaSpan[i],
+                colorSpan[i],
+                gaussianHarmonics
+            );
+        }
 
 
-        Span<byte> cloudRotationBytes = MemoryMarshal.Cast<QuantizedQuat, byte>(cloud.rotations);
-        reader.Read(cloudRotationBytes);
-
-        reader.Read(cloud.sh.Span);
 
         return cloud;
     }
@@ -61,7 +80,7 @@ public static partial class SplatSerializer
     /// </summary>
     /// <param name="filePath">The path to the SPZ file.</param>
     /// <returns>A compressed cloud of gaussians containing the deserialized data.</returns>
-    public static PackedGaussianCloud FromSpz(string filePath)
+    public static GaussianCloud FromSpz(string filePath)
     {
         using FileStream stream = File.OpenRead(filePath);
 
@@ -74,7 +93,7 @@ public static partial class SplatSerializer
     /// </summary>
     /// <param name="gaussians">The compressed cloud of gaussians to serialize.</param>
     /// <param name="stream">The stream to serialize this compressed gaussian cloud to.</param>
-    public static void ToSpz(this PackedGaussianCloud gaussians, Stream stream)
+    public static void ToSpz(this GaussianCloud gaussians, Stream stream)
     {
         SpzHeader header = new(
             SpzHeader.MAGIC,
@@ -91,33 +110,89 @@ public static partial class SplatSerializer
 
         header.WriteTo(writer);
 
-        Span<byte> posBytes = MemoryMarshal.Cast<FixedVector3, byte>(gaussians.positions);
-        writer.Write(posBytes);
+        int count = gaussians.Count;
+        int shCount = gaussians.ShDim * 3;
 
-        Span<byte> alphaBytes = MemoryMarshal.Cast<QuantizedAlpha, byte>(gaussians.alphas);
-        writer.Write(alphaBytes);
-        
-        Span<byte> colorBytes = MemoryMarshal.Cast<QuantizedColor, byte>(gaussians.colors);
-        writer.Write(colorBytes);
+        using QuickArray<FixedVector3> positions = new(count);
+        using QuickArray<QuantizedAlpha> alphas = new(count);
+        using QuickArray<QuantizedColor> colors = new(count);
+        using QuickArray<QuantizedScale> scales = new(count);
+        using QuickArray<QuantizedQuat>  rotations = new(count);
+        using QuickArray<byte> harmonics = new(count * shCount);
 
-        Span<byte> scaleBytes = MemoryMarshal.Cast<QuantizedScale, byte>(gaussians.scales);
-        writer.Write(scaleBytes);
 
-        Span<byte> rotationBytes = MemoryMarshal.Cast<QuantizedQuat, byte>(gaussians.rotations);
-        writer.Write(rotationBytes);
+        Span<FixedVector3> posSpan = positions.Span;
+        Span<QuantizedAlpha> alphaSpan = alphas.Span;
+        Span<QuantizedColor> colorSpan = colors.Span;
+        Span<QuantizedScale> scaleSpan = scales.Span;
+        Span<QuantizedQuat> rotSpan = rotations.Span;
+        Span<byte> harmonicSpan = harmonics.Span;
 
-        writer.Write(gaussians.sh.Span);
+
+        int i = count;
+
+        while (i-- > 0)
+        {
+            int offset = i * shCount;
+
+            Gaussian cur = gaussians[i];
+            posSpan[i] = cur.Position.ToFixed(12);
+            alphaSpan[i] = cur.Alpha;
+            colorSpan[i] = cur.Color;
+            scaleSpan[i] = cur.Scale;
+            rotSpan[i] = cur.Rotation;
+            cur.Sh.Quantize(harmonicSpan, offset, shCount);
+        }
+
+        writer.Write(positions.Bytes);
+        writer.Write(alphas.Bytes);
+        writer.Write(colors.Bytes);
+        writer.Write(scales.Bytes);
+        writer.Write(rotations.Bytes);
+        writer.Write(harmonics.Bytes);
     }
+
 
     /// <summary>
     /// Serializes this gaussian cloud to file at the specified path in the SPZ file format.
     /// </summary>
     /// <param name="gaussians">The compressed cloud of gaussians to serialize.</param>
     /// <param name="filePath">The path to the file where this gaussian cloud will be written to.</param>
-    public static void ToSpz(this PackedGaussianCloud gaussians, string filePath)
+    public static void ToSpz(this GaussianCloud gaussians, string filePath)
     {
         using FileStream stream = File.OpenWrite(filePath);
 
         ToSpz(gaussians, stream);
     }
+}
+
+
+
+public unsafe struct QuickArray<T> : IDisposable
+    where T : unmanaged
+{
+    public readonly int Count { get; }
+    
+    public readonly Span<T> Span => disposed ? throw new ObjectDisposedException(nameof(QuickArray<T>)) : new(memory, Count);
+    public readonly Span<byte> Bytes => MemoryMarshal.Cast<T, byte>(Span);
+
+    private readonly void* memory;
+    private bool disposed;
+
+
+
+    public QuickArray(int count)
+    {
+        Count = count;
+
+        memory = (void*)Marshal.AllocHGlobal(count * Unsafe.SizeOf<T>());
+    }
+
+
+    public void Dispose()
+    {
+        disposed = true;
+        Marshal.FreeHGlobal((IntPtr)memory);
+    }
+
 }

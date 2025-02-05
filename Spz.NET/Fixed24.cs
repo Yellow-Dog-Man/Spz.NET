@@ -50,6 +50,7 @@ public readonly struct Fixed24
     /// </summary>
     /// <param name="fractionalBits">The number of bits dedicated to representing the fractional portion.</param>
     /// <returns></returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly float ToFloat(int fractionalBits)
     {
         float scale = 1f / (1 << fractionalBits);
