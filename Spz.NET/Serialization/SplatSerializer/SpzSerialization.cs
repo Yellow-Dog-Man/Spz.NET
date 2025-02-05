@@ -130,11 +130,9 @@ public static partial class SplatSerializer
 
 
         int i = count;
-
         while (i-- > 0)
         {
             int offset = i * shCount;
-
             Gaussian cur = gaussians[i];
             posSpan[i] = cur.Position.ToFixed(12);
             alphaSpan[i] = cur.Alpha;

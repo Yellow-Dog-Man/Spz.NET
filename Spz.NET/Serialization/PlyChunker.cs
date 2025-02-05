@@ -87,11 +87,9 @@ internal readonly ref struct PlyChunker(
         get
         {
             GaussianHarmonics sh = new();
-
-            for (int i = 0; i < shDim * 3; i++)
-            {
+            int i = shDim * 3;
+            while (i-- > 0)
                 sh[i] = chunk[shIdx[i]];
-            }
 
             // Transpose the harmonics such that they become vertically-rowed. E.g:
             // [RGB]
@@ -110,10 +108,9 @@ internal readonly ref struct PlyChunker(
             // [BBBB]
 
             GaussianHarmonics sh = value.ToNCS();
-            for (int i = 0; i < shDim * 3; i++)
-            {
+            int i = shDim * 3;
+            while (i-- > 0)
                 chunk[shIdx[i]] = sh[i];
-            }
         }
     }
 
