@@ -25,13 +25,6 @@ jobs:
       - name: Build project
         run: |
           dotnet publish -c Release --framework netstandard2.0 ${{ github.workspace  }}/Spz.NET/
-          dotnet publish -c Release --framework netstandard2.0 ${{ github.workspace  }}/Spz.NET/
-          dotnet publish -c Release --framework netstandard2.0 ${{ github.workspace  }}/Spz.NET/
-          dotnet publish -c Release --framework netstandard2.0 ${{ github.workspace  }}/Spz.NET/
-
-          dotnet publish -c Release --framework net9.0 ${{ github.workspace  }}/Spz.NET/
-          dotnet publish -c Release --framework net9.0 ${{ github.workspace  }}/Spz.NET/
-          dotnet publish -c Release --framework net9.0 ${{ github.workspace  }}/Spz.NET/
           dotnet publish -c Release --framework net9.0 ${{ github.workspace  }}/Spz.NET/
       
       - name: Upload artifacts
