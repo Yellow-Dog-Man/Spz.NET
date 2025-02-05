@@ -9,26 +9,20 @@ In this example, a compressed .spz file is loaded and serialized to a .ply file.
 ```csharp
 
 // Load a .spz file
-PackedGaussianCloud packed = SplatSerializer.FromSpz("/path/to/splat.spz");
-
-// Unpack
-GaussianCloud unpacked = packed.Unpack();
+GaussianCloud splat = SplatSerializer.FromSpz("/path/to/splat.spz");
 
 // Serialize to .ply
-unpacked.ToPly("/path/to/splat.ply");
+splat.ToPly("/path/to/splat.ply");
 ```
 
 And here's how to compress a .ply to a .spz:
 ```csharp
 
 // Load a .ply file.
-GaussianCloud unpacked = SplatSerializer.FromPly("/path/to/splat.ply");
-
-// Pack
-PackedGaussianCloud packed = unpacked.Pack();
+GaussianCloud splat = SplatSerializer.FromPly("/path/to/splat.ply");
 
 // Serialize to .spz
-packed.ToSpz("/path/to/splat.spz");
+splat.ToSpz("/path/to/splat.spz");
 
 ```
 
