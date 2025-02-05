@@ -6,11 +6,6 @@ namespace Spz.NET.Helpers;
 
 public static class BinaryHelpers
 {
-    const int BUFFER_CHUNK_COUNT = 8192;
-    private static readonly ArrayPool<byte> pool = ArrayPool<byte>.Create();
-
-
-
     // TODO: Make this less bad.
     public static string ReadLine(this BinaryReader reader)
     {
@@ -56,66 +51,34 @@ public static class BinaryHelpers
 
 
 
-    // public static void Read(this Stream stream, Span<byte> bytes)
-    // {
-    //     byte[] buffer = pool.Rent(READ_CHUNK_COUNT);
-    //     Span<byte> bufferSpan = buffer;
-
-    //     int len = bytes.Length;
-    //     int curIndex = 0;
-
-    //     while (curIndex < len)
-    //     {
-    //         int bytesRead = stream.Read(buffer, 0, READ_CHUNK_COUNT);
-    //         bufferSpan[..bytesRead].CopyTo(bytes[curIndex..]);
-    //         curIndex += bytesRead;
-    //     }
-
-    //     pool.Return(buffer);
-    // }
-
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Read(this BinaryReader reader, Span<byte> bytes)
+    // These read and write helpers were basically just lifted from the .NET source and backported. All my homies love spans.
+    public static void Read(this BinaryReader reader, Span<byte> buffer)
     {
-        byte[] buffer = pool.Rent(BUFFER_CHUNK_COUNT);
-        Span<byte> bufferSpan = buffer;
+        byte[] array = ArrayPool<byte>.Shared.Rent(buffer.Length);
 
-        int len = bytes.Length;
-        int curIndex = 0;
-
-        while (curIndex < len)
+        try
         {
-            int curLength = Math.Min(bytes.Length - curIndex, BUFFER_CHUNK_COUNT);
-            int bytesRead = reader.Read(buffer, 0, curLength);
-            Span<byte> byteSlice = bytes.Slice(curIndex);
-            bufferSpan[..bytesRead].CopyTo(byteSlice);
-            curIndex += bytesRead;
+            reader.Read(array, 0, buffer.Length);
+            array.AsSpan()[..buffer.Length].CopyTo(buffer);
         }
-
-        pool.Return(buffer);
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(array);
+        }
     }
 
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Write(this BinaryWriter writer, Span<byte> bytes)
+    public static void Write(this BinaryWriter writer, ReadOnlySpan<byte> buffer)
     {
-        byte[] buffer = pool.Rent(BUFFER_CHUNK_COUNT);
-        Span<byte> bufferSpan = buffer;
-
-        int len = bytes.Length;
-        int curIndex = 0;
-
-        Span<byte> byteSlice;
-        while (curIndex < len)
+        byte[] array = ArrayPool<byte>.Shared.Rent(buffer.Length);
+        try
         {
-            int curLength = Math.Min(bytes.Length - curIndex, BUFFER_CHUNK_COUNT);
-            byteSlice = bytes.Slice(curIndex, curLength);
-            byteSlice.CopyTo(bufferSpan[..curLength]);
-            writer.Write(buffer, 0, curLength);
-            curIndex += curLength;
+            buffer.CopyTo(array);
+            writer.Write(array, 0, buffer.Length);
         }
-
-        pool.Return(buffer);
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(array);
+        }
     }
 }
