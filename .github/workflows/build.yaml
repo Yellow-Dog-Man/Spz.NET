@@ -15,6 +15,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      
+      - name: Get latest .NET
+        run: sudo apt install dotnet-sdk-9.0
 
       - name: Build project
         run: |
