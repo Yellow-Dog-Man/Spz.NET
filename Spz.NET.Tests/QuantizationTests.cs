@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using Spz.NET.Helpers;
 
 namespace Spz.NET.Tests;
 
@@ -20,18 +21,32 @@ public sealed class QuantizationTests
     {
         return min + (max - min) * Random.Shared.NextSingle();
     }
+
+
+
+    static float ToDegrees(float radians) => radians * (180f / MathF.PI);
+    static float ToRadians(float degrees) => degrees * (MathF.PI / 180f);
+    static Quaternion FromEuler(float p, float y, float r) => Quaternion.CreateFromYawPitchRoll(ToRadians(y), ToRadians(p), ToRadians(r));
+    static float Angle(Quaternion a, Quaternion b)
+    {
+        Quaternion relativeRotation = a * Quaternion.Inverse(b);
+
+        return 2*MathF.Asin(relativeRotation.AsVector4().AsVector3().Length());
+    }
+    static Quaternion RandomRotation() => Quaternion.Normalize(new Quaternion(RandomFloat(-1f, 1f), RandomFloat(-1f, 1f), RandomFloat(-1f, 1f), RandomFloat(-1f, 1f)));
+
     
     [TestMethod]
-    public void TestFloatToFixed12bit()
+    public void FloatToFixedTest()
     {
         int fractionalBits = 12;
-        int floatTestLength = 1024;
         float acceptableError = 0.001f;
 
         float fixedMin = Fixed24.MinValue(fractionalBits);
         float fixedMax = Fixed24.MaxValue(fractionalBits);
 
-        for (int i = 0; i < floatTestLength; i++)
+        // Test a thousand times just to be sure. (Is there a better way to do this?)
+        for (int i = 0; i < 1000; i++)
         {
             float original = RandomFloat(fixedMin, fixedMax);
             Fixed24 fixed24 = original.ToFixed(fractionalBits);
@@ -45,16 +60,17 @@ public sealed class QuantizationTests
 
 
     [TestMethod]
-    public void TestVector3ToFixed12bit()
+    public void Vector3ToFixedTest()
     {
         int fractionalBits = 12;
-        int floatTestLength = 1024;
         float acceptableError = 0.001f;
 
         float fixedMin = Fixed24.MinValue(fractionalBits);
         float fixedMax = Fixed24.MaxValue(fractionalBits);
 
-        for (int i = 0; i < floatTestLength; i++)
+        // Test a thousand times just to be sure. (Is there a better way to do this?)
+        int count = 1000;
+        for (int i = 0; i < count; i++)
         {
             Vector3 original = new(RandomFloat(fixedMin, fixedMax), RandomFloat(fixedMin, fixedMax), RandomFloat(fixedMin, fixedMax));
             FixedVector3 fixed24 = original.ToFixed(fractionalBits);
@@ -68,40 +84,149 @@ public sealed class QuantizationTests
 
 
     [TestMethod]
-    public void TestGaussianPacking()
+    public void QuaternionQuantizationTest()
     {
-        int fractionalBits = 12;
-        // int floatTestLength = 1024;
-        // float acceptableError = 0.001f;
+        float acceptableError = 18f; // 8 bits isn't a lot of precision, so hefty margins are required.
 
-        Gaussian original = new(
-            new(0.43915567f, 0.779961f, -6.8418803f),
-            new(-4.338518f, -4.4524884f, -6.8418803f),
-            new(0.7715423f, 0.779961f, 0.07984782f, 0.24494846f),
-            -0.31454092f,
-            new(0.6694145f, 0.7451919f, 0.5009876f),
-            new(
-                new(-0.005022233f, -0.007789358f, -0.0065335752f),
-                new(0.004808277f, -0.0059882556f, -0.0033241967f),
-                new(0.0069579175f, -0.011957922f, -0.015888745f),
-                new(0.015009115f, 0.01645963f, 0.013645758f),
-                new(0.010789621f, 0.013812945f, 0.01335298f),
-                new(-0.005126005f, -0.010236794f, -0.0073701525f),
-                new(0.032350097f, 0.030966925f, 0.023583187f),
-                new(-0.011732013f, -0.007408888f, -0.0032132515f),
-                new(-0.013759245f, -0.012922256f, -0.012700858f),
-                new(-0.011898138f, -0.014157681f, -0.012344559f),
-                new(0.021750072f, 0.025049489f, 0.025463518f),
-                new(0.020837674f, 0.01876398f, 0.013896407f),
-                new(0.03668385f, 0.038249563f, 0.027695632f),
-                new(-0.01862f, -0.018838165f, -0.008320158f),
-                new(0.028240616f, 0.026292708f, 0.020100184f),
-                new(0f, 0f, 0f)
-            )
-        );
+        // Test a thousand times just to be sure. (Is there a better way to do this?)
+        int count = 1000;
+        for (int i = 0; i < count; i++)
+        {
+            Quaternion original = RandomRotation();
+            QuantizedQuat quantized = original;
+            Quaternion suspect = quantized;
+            float angle = ToDegrees(Angle(original, suspect));
 
-        PackedGaussian packed = original.Pack(fractionalBits);
+            bool withinError = angle < acceptableError;
 
-        Gaussian suspect = packed.Unpack(fractionalBits);
+            Assert.IsTrue(withinError, $"Suspect was not within an acceptable error of {acceptableError}. Original: {original}, Suspect: {suspect}, Error: {angle}");
+        }
+    }
+
+
+
+    [TestMethod]
+    public void ScaleQuantizationTest()
+    {
+        float acceptableError = 0.06f;
+
+        // Count up in very small increments to test the error.
+        int count = 1000;
+        for (int i = 0; i < count; i++)
+        {
+            Vector3 original = new((float)i / count, (float)i / count, (float)i / count);
+            QuantizedScale quantized = original;
+            Vector3 suspect = quantized;
+
+            Vector3 error = original - suspect;
+
+            float maxError = MathF.Max(MathF.Max(error.X, error.Y), error.Z);
+
+            bool withinError = Approximately(original, suspect, acceptableError);
+
+            // Console.WriteLine($"Suspect: {suspect}, Original: {original}, Error: {original.Length() - suspect.Length()}");
+
+            Assert.IsTrue(withinError, $"Suspect was not within an acceptable error of {acceptableError}. Original: {original}, Suspect: {suspect}, Error: {maxError}");
+        }
+    }
+
+
+
+    [TestMethod]
+    public void ColorQuantizationTest()
+    {
+        float acceptableError = 0.1f;
+
+        // Count up in very small increments to test the error.
+        int count = 1000;
+        for (int i = 0; i < count; i++)
+        {
+            // Quantized colors can go up to 3.333 repeating for when spherical harmonics bring the colors back down to SDR.
+            Vector3 original = new Vector3((float)i / count, (float)i / count, (float)i / count) * (3f + 1f / 3f);
+            QuantizedColor quantized = original;
+            Vector3 suspect = quantized;
+
+            Vector3 error = original - suspect;
+
+            float maxError = MathF.Max(MathF.Max(error.X, error.Y), error.Z);
+
+            bool withinError = Approximately(original, suspect, acceptableError);
+
+            // Console.WriteLine($"Suspect: {suspect}, Original: {original}, Error: {original.Length() - suspect.Length()}");
+
+            Assert.IsTrue(withinError, $"Suspect was not within an acceptable error of {acceptableError}. Original: {original}, Suspect: {suspect}, Error: {maxError}");
+        }
+    }
+
+
+
+    [TestMethod]
+    public void AlphaQuantizationTest()
+    {
+        // Alpha is quantized with sigmoid activation, so the upper regions can be up to ~0.65f off.
+        float acceptableError = 0.65f; // TODO: Make corresponding sigmoid function to test errors at smaller ranges?
+
+        // Test a thousand times just to be sure. (Is there a better way to do this?)
+        int count = 1000;
+        for (int i = 0; i < count; i++)
+        {
+            float original = ((float)i / count) * 12f - 6f;
+            QuantizedAlpha quantized = original;
+            float suspect = quantized;
+
+            float error = original - suspect;
+
+            bool withinError = Approximately(original, suspect, acceptableError);
+
+            // Console.WriteLine($"Suspect: {suspect}, Original: {original}, Error: {original - suspect}");
+
+            Assert.IsTrue(withinError, $"Suspect was not within an acceptable error of {acceptableError}. Original: {original}, Suspect: {suspect}, Error: {error}");
+        }
+    }
+
+
+
+    [TestMethod]
+    public void HarmonicQuantizationTest()
+    {
+        float acceptableError5bit = 0.036f; // First 9 components of a harmonic are encoded 5 bits for -1 to 1.
+        float acceptableErrorRest = 0.066f; // Rest of the components are encoded 4 bits for -1 to 1, so a slightler bigger error is acceptable.
+
+        Span<byte> quantized = stackalloc byte[45];
+
+        // Test a thousand times just to be sure. (Is there a better way to do this?)
+        int count = 50;
+        for (int i = 0; i < count; i++)
+        {
+            GaussianHarmonics original = new();
+            int j = 45;
+            while (j-- > 0)
+                original[j] = ((float)i / count) * 2f + -1f;
+
+            original.Quantize(quantized);
+
+            quantized.Unquantize(out GaussianHarmonics suspect);
+
+            float maxError5bit = 0f;
+            for (j = 0; j < 9; j++)
+            {
+                float error = original[j] - suspect[j];
+                maxError5bit = MathF.Max(maxError5bit, MathF.Abs(error));
+            }
+
+            float maxErrorRest = 0f;
+            for (j = 9; j < 45; j++)
+            {
+                float error = original[j] - suspect[j];
+                maxErrorRest = MathF.Max(maxErrorRest, MathF.Abs(error));
+            }
+
+
+            if (maxError5bit > acceptableError5bit)
+                Assert.Fail($"Suspect was not within an acceptable error of {acceptableError5bit}. Original: {original}, Suspect: {suspect}, Error: {maxError5bit}");
+            
+            if (maxErrorRest > acceptableErrorRest)
+                Assert.Fail($"Suspect was not within an acceptable error of {acceptableErrorRest}. Original: {original}, Suspect: {suspect}, Error: {maxErrorRest}");
+        }
     }
 }

@@ -1,6 +1,4 @@
-using System.Numerics;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace Spz.NET;
 
@@ -436,6 +434,59 @@ public struct GaussianHarmonics : IEquatable<GaussianHarmonics>
     private static ref float GetFirst(in GaussianHarmonics harmonics)
     {
         return ref Unsafe.AsRef(in harmonics.Component0);
+    }
+
+
+
+    public override string ToString()
+    {
+        return $"""
+        <{Component0},
+        {Component1},
+        {Component2},
+        {Component3},
+        {Component4},
+        {Component5},
+        {Component6},
+        {Component7},
+        {Component8},
+        {Component9},
+        {Component10},
+        {Component11},
+        {Component12},
+        {Component13},
+        {Component14},
+        {Component15},
+        {Component16},
+        {Component17},
+        {Component18},
+        {Component19},
+        {Component20},
+        {Component21},
+        {Component22},
+        {Component23},
+        {Component24},
+        {Component25},
+        {Component26},
+        {Component27},
+        {Component28},
+        {Component29},
+        {Component30},
+        {Component31},
+        {Component32},
+        {Component33},
+        {Component34},
+        {Component35},
+        {Component36},
+        {Component37},
+        {Component38},
+        {Component39},
+        {Component40},
+        {Component41},
+        {Component42},
+        {Component43},
+        {Component44}>
+        """;
     }
 
 
