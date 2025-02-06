@@ -166,7 +166,7 @@ public sealed class QuantizationTests
         // Alpha is quantized with sigmoid activation, so the upper regions can be up to ~0.65f off.
         float acceptableError = 0.65f; // TODO: Make corresponding sigmoid function to test errors at smaller ranges?
 
-        // Test a thousand times just to be sure. (Is there a better way to do this?)
+        // Count up in very small increments to test the error.
         int count = 1000;
         for (int i = 0; i < count; i++)
         {
@@ -194,8 +194,8 @@ public sealed class QuantizationTests
 
         Span<byte> quantized = stackalloc byte[45];
 
-        // Test a thousand times just to be sure. (Is there a better way to do this?)
-        int count = 50;
+        // Count up in very small increments to test the error.
+        int count = 1000;
         for (int i = 0; i < count; i++)
         {
             GaussianHarmonics original = new();
