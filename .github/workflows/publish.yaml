@@ -24,13 +24,6 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 9.0.x
-      
-      - name: TEST
-        working-directory: ./Spz.NET
-        run: |
-          ls -lah
-          echo ${{ github.event.release.tag_name }}
-          echo ${{ env.VERSION }}
 
       - name: Build
         working-directory: ./Spz.NET
