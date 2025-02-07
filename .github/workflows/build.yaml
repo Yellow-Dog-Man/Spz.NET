@@ -2,12 +2,8 @@ name: "Build"
 
 on:
   push:
-    paths_ignore:
-      - '**/*.md'
-  pull_request:
-    paths_ignore:
-      - '**/*.md'
-
+    branches:
+      - main
 
 jobs:
   build:

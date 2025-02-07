@@ -8,6 +8,9 @@ on:
 
 jobs:
   publish:
+    env:
+      VERSION: ${{ github.event.release.tag_name }}
+    
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -17,15 +20,18 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 9.0.x
-
-      - name: Set distdir
+      
+      - name: TEST
+        working-directory: ./Spz.NET
         run: |
-          echo "distdir=${{ github.workspace  }}/nuget" >> "$GITHUB_ENV"
+          ls -lah
+          echo ${{ github.event.release.tag_name }}
+          echo ${{ env.VERSION }}
 
-      - name: Build project
-        run: |
-          dotnet pack -c Release -o ${{ env.distdir }} ${{ github.workspace  }}/Spz.NET/
+      - name: Build
+        working-directory: ./Spz.NET
+        run: dotnet pack -c Release -p:Version=${{ env.VERSION }} -p:PackageVersion=${{ env.VERSION }}
 
-      - name: Publish to NuGet
-        run: |
-          dotnet nuget push ${{ env.distdir }}/*.nupkg --api-key ${{ secrets.GITHUB_TOKEN }} --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+      - name: Nuget Publish
+        working-directory: ./Spz.NET
+        run: dotnet nuget push ./bin/Release/*.nupkg -k ${{ secrets.NUGET_TOKEN }} -s https://api.nuget.org/v3/index.json
