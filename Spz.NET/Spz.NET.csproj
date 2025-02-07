@@ -7,6 +7,19 @@
 
     <LangVersion>12</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+    <Description>Native C# implementation of Niantic Labs' SPZ format.</Description>
+    <PackageId>YellowDogMan.Spz.NET</PackageId>
+    <Authors>Yellow Dog Man Studios</Authors>
+    <Company>Yellow Dog Man Studios</Company>
+    <Copyright>Copyright (c) Yellow Dog Man Studios s.r.o. 2025</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>gaussian splat compression</PackageTags>
+    <RepositoryUrl>https://github.com/Yellow-Dog-Man/Spz.NET</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  
+
+    <!-- <DocumentationFile>./Docs.xml</DocumentationFile> -->
   </PropertyGroup>
 
   <ItemGroup>

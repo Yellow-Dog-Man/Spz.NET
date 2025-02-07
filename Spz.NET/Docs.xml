@@ -1,0 +1,943 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Spz.NET</name>
+    </assembly>
+    <members>
+        <member name="T:Spz.NET.Fixed24">
+            <summary>
+            A 24-bit fixed-point number with a given amount of fractional bits.
+            </summary>
+        </member>
+        <member name="M:Spz.NET.Fixed24.#ctor(System.Single,System.Int32)">
+            <summary>
+            Creates a 24-bit fixed-point number from a floating-point value.
+            </summary>
+            <param name="value">The number to be converted to a fixed representation.</param>
+            <param name="fractionalBits">The number of bits dedicated to representing the fractional portion.</param>
+        </member>
+        <member name="M:Spz.NET.Fixed24.#ctor(System.Byte,System.Byte,System.Byte)">
+            <summary>
+            Creates a 24-bit fixed-point number from 3 bytes.
+            </summary>
+            <param name="b0">Byte 1.</param>
+            <param name="b1">Byte 2.</param>
+            <param name="b2">Byte 3.</param>
+        </member>
+        <member name="M:Spz.NET.Fixed24.ToFloat(System.Int32)">
+            <summary>
+            Converts this fixed-point number to a floating point representation with a given number of fractional bits.
+            </summary>
+            <param name="fractionalBits">The number of bits dedicated to representing the fractional portion.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Spz.NET.Fixed24.MaxValue(System.Int32)">
+            <summary>
+            The maximum value that this fixed-point number can represent with a given amount of fractional bits.
+            </summary>
+            <param name="fractionalBits">The number of bits dedicated to representing the fractional portion.</param>
+            <returns>A floating-point number representing the maximum value that can be represented.</returns>
+        </member>
+        <member name="M:Spz.NET.Fixed24.MinValue(System.Int32)">
+            <summary>
+            The minimum value that this fixed-point number can represent with a given amount of fractional bits.
+            </summary>
+            <param name="fractionalBits">The number of bits dedicated to representing the fractional portion.</param>
+            <returns>A floating-point number representing the minimum value that can be represented.</returns>
+        </member>
+        <member name="M:Spz.NET.Helpers.FixedPointHelpers.ToFixed(System.Single,System.Int32)">
+            <summary>
+            Converts a floating-point value into a 24-bit fixed-point number with a specified amount of bits to represent the fractional portion.
+            </summary>
+            <param name="value">Number to convert.</param>
+            <param name="fractionalBits">Bits dedicated to the fractional portion.</param>
+            <returns>Fixed-point number.</returns>
+        </member>
+        <member name="M:Spz.NET.Helpers.FixedPointHelpers.ToFixed(System.Numerics.Vector3,System.Int32)">
+            <summary>
+            Converts a Vector3 value into a 24-bit fixed-point Vector with a specified amount of bits to represent the fractional portion of each component.
+            </summary>
+            <param name="value">Vector to convert.</param>
+            <param name="fractionalBits">Bits dedicated to the fractional portion.</param>
+            <returns>Fixed-point vector.</returns>
+        </member>
+        <member name="M:Spz.NET.Helpers.FixedPointHelpers.ByteClamp(System.Single)">
+            <summary>
+            Ensures a float is within 0-255 range to ensure safe byte casting.
+            </summary>
+            <param name="value">The float to clamp.</param>
+            <returns>Safely-casted byte.</returns>
+        </member>
+        <member name="M:Spz.NET.Helpers.SplatMathHelpers.Quantize(Spz.NET.GaussianHarmonics@,System.Span{System.Byte},System.Int32,System.Int32)">
+            <summary>
+            Quantizes a gaussian's spherical harmonics for improved compression performance.
+            <para>
+            5 bits are used for the first 3 coefficients (9 components), and 4 bits are used for the rest.
+            </para>
+            </summary>
+            <param name="harmonics">The harmonics to quantize.</param>
+            <returns>Quantized harmonics.</returns>
+        </member>
+        <member name="M:Spz.NET.Helpers.SplatMathHelpers.Unquantize(System.Span{System.Byte},Spz.NET.GaussianHarmonics@,System.Int32,System.Int32)">
+            <summary>
+            Unquantizes a gaussian's spherical harmonics.
+            </summary>
+            <para>
+            5 bits are used for the first 3 coefficients (9 components), and 4 bits are used for the rest.
+            </para>
+            <param name="harmonics">The harmonics to unquantize.</param>
+            <returns>Unquantized harmonics.</returns>
+        </member>
+        <member name="M:Spz.NET.Helpers.SplatMathHelpers.QuantizeSH(System.Single,System.Int32)">
+            <summary>
+            Quantizes a single component of a spherical harmonic's coefficients to a specified bucket size.
+            </summary>
+            <param name="x">The component value.</param>
+            <param name="bucketSize">The size of the bucket to quantize to.</param>
+            <returns>A quantized representation of the component.</returns>
+        </member>
+        <member name="M:Spz.NET.Helpers.SplatMathHelpers.UnquantizeSH(System.Byte)">
+            <summary>
+            Unquantizes a single component of a spherical harmonic's coefficients.
+            </summary>
+            <param name="x">The quantized value.</param>
+            <returns>An unquantized representation of the component.</returns>
+        </member>
+        <member name="M:Spz.NET.Helpers.SplatMathHelpers.DimForDegree(System.Int32)">
+            <summary>
+            Gets the number of coefficients for a given degree of spherical harmonics.
+            </summary>
+            <param name="degree">The degree of spherical harmonics.</param>
+            <returns>The dimensions, or number of coefficients for the given degree.</returns>
+            <exception cref="T:System.NotImplementedException">Thrown when a non-supported degree of spherical harmonic is requested.</exception>
+        </member>
+        <member name="M:Spz.NET.Helpers.SplatMathHelpers.DegreeForDim(System.Int32)">
+            <summary>
+            Gets the degree of spherical harmonics for a given number of coefficients.
+            </summary>
+            <param name="dim">The coefficients in the spherical harmonic.</param>
+            <returns>The corresponding degree.</returns>
+        </member>
+        <member name="T:Spz.NET.Structs.PlyChunker">
+            <summary>
+            Organizes access to a chunk of data representing a gaussian from a PLY file.
+            </summary>
+            <param name="chunk">Data chunk.</param>
+            <param name="positionIdx">Index of the position components.</param>
+            <param name="scaleIdx">Index of the scale components.</param>
+            <param name="rotIdx">Index of the rotation components.</param>
+            <param name="alphaIdx">Index of the alpha components.</param>
+            <param name="colorIdx">Index of the color components.</param>
+            <param name="shIdx">Index of the harmonics components.</param>
+            <param name="shDim">The dimensions of this gaussian.</param>
+        </member>
+        <member name="M:Spz.NET.Structs.PlyChunker.#ctor(System.Span{System.Single},System.Span{System.Int32},System.Span{System.Int32},System.Span{System.Int32},System.Int32,System.Span{System.Int32},System.Span{System.Int32},System.Int32)">
+            <summary>
+            Organizes access to a chunk of data representing a gaussian from a PLY file.
+            </summary>
+            <param name="chunk">Data chunk.</param>
+            <param name="positionIdx">Index of the position components.</param>
+            <param name="scaleIdx">Index of the scale components.</param>
+            <param name="rotIdx">Index of the rotation components.</param>
+            <param name="alphaIdx">Index of the alpha components.</param>
+            <param name="colorIdx">Index of the color components.</param>
+            <param name="shIdx">Index of the harmonics components.</param>
+            <param name="shDim">The dimensions of this gaussian.</param>
+        </member>
+        <member name="T:Spz.NET.Serialization.SplatSerializer">
+            <summary>
+            Functions for serializing and deserializing gaussian splats.
+            </summary>
+        </member>
+        <member name="M:Spz.NET.Serialization.SplatSerializer.FromPly(System.IO.Stream)">
+            <summary>
+            Deserializes a gaussian splat from a stream providing a PLY file.
+            </summary>
+            <param name="stream">The stream to read the PLY file from.</param>
+            <returns>A cloud of gaussians containing the deserialized data.</returns>
+            <exception cref="T:Spz.NET.SplatFormatException">Thrown when decoding the gaussian splat fails.</exception>
+        </member>
+        <member name="M:Spz.NET.Serialization.SplatSerializer.FromPly(System.String)">
+            <summary>
+            Deserializes a gaussian splat from a file path pointing to a PLY file.
+            </summary>
+            <param name="filePath">The path to the PLY file.</param>
+            <returns>A cloud of gaussians containing the deserialized data.</returns>
+            <exception cref="T:Spz.NET.SplatFormatException">Thrown when decoding the gaussian splat fails.</exception>
+        </member>
+        <member name="M:Spz.NET.Serialization.SplatSerializer.ToPly(Spz.NET.GaussianCloud,System.IO.Stream)">
+            <summary>
+            Serializes this gaussian splat to a stream and encodes it in the PLY file format.
+            </summary>
+            <param name="gaussians">The compressed cloud of gaussians to serialize.</param>
+            <param name="stream">The stream to serialize this gaussian cloud to.</param>
+        </member>
+        <member name="M:Spz.NET.Serialization.SplatSerializer.ToPly(Spz.NET.GaussianCloud,System.String)">
+            <summary>
+            Serializes this gaussian splat to file at the specified path in the PLY file format.
+            </summary>
+            <param name="gaussians">The cloud of gaussians to serialize.</param>
+            <param name="filePath">The path to the file where this gaussian cloud will be written to.</param>
+        </member>
+        <member name="M:Spz.NET.Serialization.SplatSerializer.FromSpz(System.IO.Stream)">
+            <summary>
+            Deserializes a gaussian splat from a stream providing an SPZ file.
+            </summary>
+            <param name="stream">The stream to read the SPZ file from.</param>
+            <returns>A compressed cloud of gaussians containing the deserialized data.</returns>
+        </member>
+        <member name="M:Spz.NET.Serialization.SplatSerializer.FromSpz(System.String)">
+            <summary>
+            Deserializes a gaussian splat from a file path pointing to an SPZ file.
+            </summary>
+            <param name="filePath">The path to the SPZ file.</param>
+            <returns>A compressed cloud of gaussians containing the deserialized data.</returns>
+        </member>
+        <member name="M:Spz.NET.Serialization.SplatSerializer.ToSpz(Spz.NET.GaussianCloud,System.IO.Stream)">
+            <summary>
+            Serializes this gaussian splat to a stream and encodes it in the SPZ file format.
+            </summary>
+            <param name="gaussians">The compressed cloud of gaussians to serialize.</param>
+            <param name="stream">The stream to serialize this compressed gaussian cloud to.</param>
+        </member>
+        <member name="M:Spz.NET.Serialization.SplatSerializer.ToSpz(Spz.NET.GaussianCloud,System.String)">
+            <summary>
+            Serializes this gaussian cloud to file at the specified path in the SPZ file format.
+            </summary>
+            <param name="gaussians">The compressed cloud of gaussians to serialize.</param>
+            <param name="filePath">The path to the file where this gaussian cloud will be written to.</param>
+        </member>
+        <member name="T:Spz.NET.GaussianCloud">
+            <summary>
+            A collection of uncompressed gaussians representing a gaussian splat.
+            </summary>
+            <remarks>
+            Creates a cloud of gaussians with the specified parameters.
+            </remarks>
+            <param name="capacity">The capacity of the cloud.</param>
+            <param name="shDim">The dimensions of each gaussian's spherical harmonics.</param>
+            <param name="flags">The collection flags.</param>
+        </member>
+        <member name="M:Spz.NET.GaussianCloud.#ctor(System.Int32,System.Int32,Spz.NET.Enums.GaussianFlags)">
+            <summary>
+            A collection of uncompressed gaussians representing a gaussian splat.
+            </summary>
+            <remarks>
+            Creates a cloud of gaussians with the specified parameters.
+            </remarks>
+            <param name="capacity">The capacity of the cloud.</param>
+            <param name="shDim">The dimensions of each gaussian's spherical harmonics.</param>
+            <param name="flags">The collection flags.</param>
+        </member>
+        <member name="P:Spz.NET.GaussianCloud.Compressed">
+            <inheritdoc/>
+        </member>
+        <member name="P:Spz.NET.GaussianCloud.Item(System.Int32)">
+            <inheritdoc/>
+        </member>
+        <member name="T:Spz.NET.GaussianCollection">
+            <summary>
+            A collection of gaussians representing a gaussian splat.
+            </summary>
+        </member>
+        <member name="M:Spz.NET.GaussianCollection.#ctor(System.Int32,System.Int32,Spz.NET.Enums.GaussianFlags,System.Int32)">
+            <summary>
+            A collection of gaussians representing a gaussian splat.
+            </summary>
+        </member>
+        <member name="P:Spz.NET.GaussianCollection.Item(System.Int32)">
+            <summary>
+            Retrieves a gaussian from the specified index in the collection.
+            </summary>
+            <param name="index">Index of the gaussian.</param>
+            <returns>The retrieved gaussian.</returns>
+        </member>
+        <member name="P:Spz.NET.GaussianCollection.Compressed">
+            <summary>
+            Whether this collection is compressed.
+            </summary>
+        </member>
+        <member name="F:Spz.NET.GaussianCollection.FractionalBits">
+            <summary>
+            The number of bits dedicated to representing the fractional portion of each gaussian's position.
+            </summary>
+        </member>
+        <member name="P:Spz.NET.GaussianCollection.Count">
+            <summary>
+            The number of gaussians in this collection.
+            </summary>
+        </member>
+        <member name="F:Spz.NET.GaussianCollection.ShDim">
+            <summary>
+            The dimensions of the spherical harmonics for each gaussian.
+            </summary>
+        </member>
+        <member name="F:Spz.NET.GaussianCollection.ShDegree">
+            <summary>
+            The degree of the spherical harmonics for each gaussian.
+            </summary>
+        </member>
+        <member name="P:Spz.NET.GaussianCollection.Flags">
+            <summary>
+            Collection flags.
+            </summary>
+        </member>
+        <member name="T:Spz.NET.GaussianHarmonics">
+            <summary>
+            Represents the spherical harmonics of a given gaussian.
+            </summary>
+            <typeparam name="T">The type to use for each coefficient's components.</typeparam>
+        </member>
+        <member name="M:Spz.NET.GaussianHarmonics.ToNCS">
+            <summary>
+            Transposes the harmonics such that each row of components corresponds to a given color channel. Ex:
+            <para>
+            [RRR]
+            </para>
+            <para>
+            [GGG]
+            </para>
+            <para>
+            [BBB]
+            </para>
+            </summary>
+            <returns>The transposed harmonics.</returns>
+        </member>
+        <member name="M:Spz.NET.GaussianHarmonics.ToNSC">
+            <summary>
+            Transposes the harmonics such that each row of components corresponds to each color.
+            <para>
+            [RGB]
+            </para>
+            <para>
+            [RGB]
+            </para>
+            <para>
+            [RGB]
+            </para>
+            </summary>
+            <returns>The transposed harmonics.</returns>
+        </member>
+        <member name="T:Spz.NET.FixedVector3">
+            <summary>
+            An analog of <see cref="T:System.Numerics.Vector3"/> with each component as a 24-bit fixed-point number with a given number of bits dedicated to the fractional portion.
+            </summary>
+            <param name="value">The vector to be converted to a fixed-point representation</param>
+            <param name="fractionalBits">The number of bits dedicated to representing the fractional portion of each component.</param>
+        </member>
+        <member name="M:Spz.NET.FixedVector3.#ctor(System.Numerics.Vector3@,System.Int32)">
+            <summary>
+            An analog of <see cref="T:System.Numerics.Vector3"/> with each component as a 24-bit fixed-point number with a given number of bits dedicated to the fractional portion.
+            </summary>
+            <param name="value">The vector to be converted to a fixed-point representation</param>
+            <param name="fractionalBits">The number of bits dedicated to representing the fractional portion of each component.</param>
+        </member>
+        <member name="T:System.Diagnostics.CodeAnalysis.AllowNullAttribute">
+            <summary>
+            Specifies that null is allowed as an input even if the corresponding type disallows it.
+            </summary>
+        </member>
+        <member name="T:System.Diagnostics.CodeAnalysis.ConstantExpectedAttribute">
+            <summary>
+            Indicates that the specified method parameter expects a constant.
+            </summary>
+            <remarks>
+            This can be used to inform tooling that a constant should be used as an argument for the annotated parameter.
+            </remarks>
+        </member>
+        <member name="P:System.Diagnostics.CodeAnalysis.ConstantExpectedAttribute.Min">
+            <summary>
+            Indicates the minimum bound of the expected constant, inclusive.
+            </summary>
+        </member>
+        <member name="P:System.Diagnostics.CodeAnalysis.ConstantExpectedAttribute.Max">
+            <summary>
+            Indicates the maximum bound of the expected constant, inclusive.
+            </summary>
+        </member>
+        <member name="T:System.Diagnostics.CodeAnalysis.DisallowNullAttribute">
+            <summary>
+            Specifies that null is disallowed as an input even if the corresponding type allows it.
+            </summary>
+        </member>
+        <member name="T:System.Diagnostics.CodeAnalysis.DoesNotReturnAttribute">
+            <summary>
+            Applied to a method that will never return under any circumstance.
+            </summary>
+        </member>
+        <member name="T:System.Diagnostics.CodeAnalysis.DoesNotReturnIfAttribute">
+            <summary>
+            Specifies that the method will not return if the associated Boolean parameter is passed the specified value.
+            </summary>
+        </member>
+        <member name="M:System.Diagnostics.CodeAnalysis.DoesNotReturnIfAttribute.#ctor(System.Boolean)">
+            <summary>
+            Initializes the attribute with the specified parameter value.
+            </summary>
+            <param name="parameterValue">
+            The condition parameter value. Code after the method will be considered unreachable
+            by diagnostics if the argument to the associated parameter matches this value.
+            </param>
+        </member>
+        <member name="P:System.Diagnostics.CodeAnalysis.DoesNotReturnIfAttribute.ParameterValue">
+            <summary>
+            Gets the condition parameter value.
+            </summary>
+        </member>
+        <member name="T:System.Diagnostics.CodeAnalysis.ExperimentalAttribute">
+            <summary>
+            Indicates that an API is experimental and it may change in the future.
+            </summary>
+            <remarks>
+            This attribute allows call sites to be flagged with a diagnostic that indicates that an experimental
+            feature is used. Authors can use this attribute to ship preview features in their assemblies.
+            </remarks>
+        </member>
+        <member name="M:System.Diagnostics.CodeAnalysis.ExperimentalAttribute.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:System.Diagnostics.CodeAnalysis.ExperimentalAttribute"/> class,
+            specifying the ID that the compiler will use when reporting a use of the API the attribute applies to.
+            </summary>
+            <param name="diagnosticId">The ID that the compiler will use when reporting a use of the API the attribute applies to.</param>
+        </member>
+        <member name="P:System.Diagnostics.CodeAnalysis.ExperimentalAttribute.DiagnosticId">
+            <summary>
+            Gets the ID that the compiler will use when reporting a use of the API the attribute applies to.
+            </summary>
+            <value>The unique diagnostic ID.</value>
+            <remarks>
+            The diagnostic ID is shown in build output for warnings and errors.
+            <para>This property represents the unique ID that can be used to suppress the warnings or errors, if needed.</para>
+            </remarks>
+        </member>
+        <member name="P:System.Diagnostics.CodeAnalysis.ExperimentalAttribute.UrlFormat">
+            <summary>
+            Gets or sets the URL for corresponding documentation.
+            The API accepts a format string instead of an actual URL, creating a generic URL that includes the diagnostic ID.
+            </summary>
+            <value>The format string that represents a URL to corresponding documentation.</value>
+            <remarks>An example format string is <c>https://contoso.com/obsoletion-warnings/{0}</c>.</remarks>
+        </member>
+        <member name="T:System.Diagnostics.CodeAnalysis.MaybeNullAttribute">
+            <summary>
+            Specifies that an output may be null even if the corresponding type disallows it.
+            </summary>
+        </member>
+        <member name="T:System.Diagnostics.CodeAnalysis.MaybeNullWhenAttribute">
+            <summary>
+            Specifies that when a method returns <see cref="P:System.Diagnostics.CodeAnalysis.MaybeNullWhenAttribute.ReturnValue"/>, the parameter may be null even if the corresponding type disallows it.
+            </summary>
+        </member>
+        <member name="M:System.Diagnostics.CodeAnalysis.MaybeNullWhenAttribute.#ctor(System.Boolean)">
+            <summary>
+            Initializes the attribute with the specified return value condition.
+            </summary>
+            <param name="returnValue">The return value condition. If the method returns this value, the associated parameter may be null.</param>
+        </member>
+        <member name="P:System.Diagnostics.CodeAnalysis.MaybeNullWhenAttribute.ReturnValue">
+            <summary>
+            Gets the return value condition.
+            </summary>
+        </member>
+        <member name="T:System.Diagnostics.CodeAnalysis.MemberNotNullAttribute">
+            <summary>
+            Specifies that the method or property will ensure that the listed field and property members have not-null values.
+            </summary>
+        </member>
+        <member name="M:System.Diagnostics.CodeAnalysis.MemberNotNullAttribute.#ctor(System.String)">
+            <summary>
+            Initializes the attribute with a field or property member.
+            </summary>
+            <param name="member">The field or property member that is promised to be not-null.</param>
+        </member>
+        <member name="M:System.Diagnostics.CodeAnalysis.MemberNotNullAttribute.#ctor(System.String[])">
+            <summary>
+            Initializes the attribute with the list of field and property members.
+            </summary>
+            <param name="members">The list of field and property members that are promised to be not-null.</param>
+        </member>
+        <member name="P:System.Diagnostics.CodeAnalysis.MemberNotNullAttribute.Members">
+            <summary>
+            Gets field or property member names.
+            </summary>
+        </member>
+        <member name="T:System.Diagnostics.CodeAnalysis.MemberNotNullWhenAttribute">
+            <summary>
+            Specifies that the method or property will ensure that the listed field and property
+            members have not-null values when returning with the specified return value condition.
+            </summary>
+        </member>
+        <member name="M:System.Diagnostics.CodeAnalysis.MemberNotNullWhenAttribute.#ctor(System.Boolean,System.String)">
+            <summary>
+            Initializes the attribute with the specified return value condition and a field or property member.
+            </summary>
+            <param name="returnValue">The return value condition. If the method returns this value, the associated parameter will not be null.</param>
+            <param name="member">The field or property member that is promised to be not-null.</param>
+        </member>
+        <member name="M:System.Diagnostics.CodeAnalysis.MemberNotNullWhenAttribute.#ctor(System.Boolean,System.String[])">
+            <summary>
+            Initializes the attribute with the specified return value condition and list of field and property members.
+            </summary>
+            <param name="returnValue">The return value condition. If the method returns this value, the associated parameter will not be null.</param>
+            <param name="members">The list of field and property members that are promised to be not-null.</param>
+        </member>
+        <member name="P:System.Diagnostics.CodeAnalysis.MemberNotNullWhenAttribute.ReturnValue">
+            <summary>
+            Gets the return value condition.
+            </summary>
+        </member>
+        <member name="P:System.Diagnostics.CodeAnalysis.MemberNotNullWhenAttribute.Members">
+            <summary>
+            Gets field or property member names.
+            </summary>
+        </member>
+        <member name="T:System.Diagnostics.CodeAnalysis.NotNullAttribute">
+            <summary>
+            Specifies that an output will not be null even if the corresponding type allows it.
+            Specifies that an input argument was not null when the call returns.
+            </summary>
+        </member>
+        <member name="T:System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute">
+            <summary>
+            Specifies that the output will be non-null if the named parameter is non-null.
+            </summary>
+        </member>
+        <member name="M:System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute.#ctor(System.String)">
+            <summary>
+            Initializes the attribute with the associated parameter name.
+            </summary>
+            <param name="parameterName">The associated parameter name. The output will be non-null if the argument to the parameter specified is non-null.</param>
+        </member>
+        <member name="P:System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute.ParameterName">
+            <summary>
+            Gets the associated parameter name.
+            </summary>
+        </member>
+        <member name="T:System.Diagnostics.CodeAnalysis.NotNullWhenAttribute">
+            <summary>
+            Specifies that when a method returns <see cref="P:System.Diagnostics.CodeAnalysis.NotNullWhenAttribute.ReturnValue"/>, the parameter will not be null even if the corresponding type allows it.
+            </summary>
+        </member>
+        <member name="M:System.Diagnostics.CodeAnalysis.NotNullWhenAttribute.#ctor(System.Boolean)">
+            <summary>
+            Initializes the attribute with the specified return value condition.
+            </summary>
+            <param name="returnValue">The return value condition. If the method returns this value, the associated parameter will not be null.</param>
+        </member>
+        <member name="P:System.Diagnostics.CodeAnalysis.NotNullWhenAttribute.ReturnValue">
+            <summary>Gets the return value condition.</summary>
+        </member>
+        <member name="T:System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute">
+            <summary>
+            Specifies that this constructor sets all required members for the current type,
+            and callers do not need to set any required members themselves.
+            </summary>
+        </member>
+        <member name="T:System.Diagnostics.CodeAnalysis.StringSyntaxAttribute">
+            <summary>
+            Specifies the syntax used in a string.
+            </summary>
+        </member>
+        <member name="M:System.Diagnostics.CodeAnalysis.StringSyntaxAttribute.#ctor(System.String)">
+            <summary>
+            Initializes the <see cref="T:System.Diagnostics.CodeAnalysis.StringSyntaxAttribute"/> with the identifier of the syntax used.
+            </summary>
+            <param name="syntax">The syntax identifier.</param>
+        </member>
+        <member name="M:System.Diagnostics.CodeAnalysis.StringSyntaxAttribute.#ctor(System.String,System.Object[])">
+            <summary>Initializes the <see cref="T:System.Diagnostics.CodeAnalysis.StringSyntaxAttribute"/> with the identifier of the syntax used.</summary>
+            <param name="syntax">The syntax identifier.</param>
+            <param name="arguments">Optional arguments associated with the specific syntax employed.</param>
+        </member>
+        <member name="P:System.Diagnostics.CodeAnalysis.StringSyntaxAttribute.Syntax">
+            <summary>Gets the identifier of the syntax used.</summary>
+        </member>
+        <member name="P:System.Diagnostics.CodeAnalysis.StringSyntaxAttribute.Arguments">
+            <summary>Optional arguments associated with the specific syntax employed.</summary>
+        </member>
+        <member name="F:System.Diagnostics.CodeAnalysis.StringSyntaxAttribute.CompositeFormat">
+            <summary>The syntax identifier for strings containing composite formats for string formatting.</summary>
+        </member>
+        <member name="F:System.Diagnostics.CodeAnalysis.StringSyntaxAttribute.DateOnlyFormat">
+            <summary>The syntax identifier for strings containing date format specifiers.</summary>
+        </member>
+        <member name="F:System.Diagnostics.CodeAnalysis.StringSyntaxAttribute.DateTimeFormat">
+            <summary>The syntax identifier for strings containing date and time format specifiers.</summary>
+        </member>
+        <member name="F:System.Diagnostics.CodeAnalysis.StringSyntaxAttribute.EnumFormat">
+            <summary>The syntax identifier for strings containing <see cref="T:System.Enum"/> format specifiers.</summary>
+        </member>
+        <member name="F:System.Diagnostics.CodeAnalysis.StringSyntaxAttribute.GuidFormat">
+            <summary>The syntax identifier for strings containing <see cref="T:System.Guid"/> format specifiers.</summary>
+        </member>
+        <member name="F:System.Diagnostics.CodeAnalysis.StringSyntaxAttribute.Json">
+            <summary>The syntax identifier for strings containing JavaScript Object Notation (JSON).</summary>
+        </member>
+        <member name="F:System.Diagnostics.CodeAnalysis.StringSyntaxAttribute.NumericFormat">
+            <summary>The syntax identifier for strings containing numeric format specifiers.</summary>
+        </member>
+        <member name="F:System.Diagnostics.CodeAnalysis.StringSyntaxAttribute.Regex">
+            <summary>The syntax identifier for strings containing regular expressions.</summary>
+        </member>
+        <member name="F:System.Diagnostics.CodeAnalysis.StringSyntaxAttribute.TimeOnlyFormat">
+            <summary>The syntax identifier for strings containing time format specifiers.</summary>
+        </member>
+        <member name="F:System.Diagnostics.CodeAnalysis.StringSyntaxAttribute.TimeSpanFormat">
+            <summary>The syntax identifier for strings containing <see cref="T:System.TimeSpan"/> format specifiers.</summary>
+        </member>
+        <member name="F:System.Diagnostics.CodeAnalysis.StringSyntaxAttribute.Uri">
+            <summary>The syntax identifier for strings containing URIs.</summary>
+        </member>
+        <member name="F:System.Diagnostics.CodeAnalysis.StringSyntaxAttribute.Xml">
+            <summary>The syntax identifier for strings containing XML.</summary>
+        </member>
+        <member name="T:System.Diagnostics.CodeAnalysis.UnscopedRefAttribute">
+            <summary>
+            Used to indicate a byref escapes and is not scoped.
+            </summary>
+            <remarks>
+            <para>
+            There are several cases where the C# compiler treats a <see langword="ref"/> as implicitly
+            <see langword="scoped"/> - where the compiler does not allow the <see langword="ref"/> to escape the method.
+            </para>
+            <para>
+            For example:
+            <list type="number">
+                <item><see langword="this"/> for <see langword="struct"/> instance methods.</item>
+                <item><see langword="ref"/> parameters that refer to <see langword="ref"/> <see langword="struct"/> types.</item>
+                <item><see langword="out"/> parameters.</item>
+            </list>
+            </para>
+            <para>
+            This attribute is used in those instances where the <see langword="ref"/> should be allowed to escape.
+            </para>
+            <para>
+            Applying this attribute, in any form, has impact on consumers of the applicable API. It is necessary for
+            API authors to understand the lifetime implications of applying this attribute and how it may impact their users.
+            </para>
+            </remarks>
+        </member>
+        <member name="T:System.Index">
+            <summary>Represent a type can be used to index a collection either from the start or the end.</summary>
+            <remarks>
+            Index is used by the C# compiler to support the new index syntax
+            <code>
+            int[] someArray = new int[5] { 1, 2, 3, 4, 5 } ;
+            int lastElement = someArray[^1]; // lastElement = 5
+            </code>
+            </remarks>
+        </member>
+        <member name="M:System.Index.#ctor(System.Int32,System.Boolean)">
+            <summary>Construct an Index using a value and indicating if the index is from the start or from the end.</summary>
+            <param name="value">The index value. it has to be zero or positive number.</param>
+            <param name="fromEnd">Indicating if the index is from the start or from the end.</param>
+            <remarks>
+            If the Index constructed from the end, index value 1 means pointing at the last element and index value 0 means pointing at beyond last element.
+            </remarks>
+        </member>
+        <member name="P:System.Index.Start">
+            <summary>Create an Index pointing at first element.</summary>
+        </member>
+        <member name="P:System.Index.End">
+            <summary>Create an Index pointing at beyond last element.</summary>
+        </member>
+        <member name="M:System.Index.FromStart(System.Int32)">
+            <summary>Create an Index from the start at the position indicated by the value.</summary>
+            <param name="value">The index value from the start.</param>
+        </member>
+        <member name="M:System.Index.FromEnd(System.Int32)">
+            <summary>Create an Index from the end at the position indicated by the value.</summary>
+            <param name="value">The index value from the end.</param>
+        </member>
+        <member name="P:System.Index.Value">
+            <summary>Returns the index value.</summary>
+        </member>
+        <member name="P:System.Index.IsFromEnd">
+            <summary>Indicates whether the index is from the start or the end.</summary>
+        </member>
+        <member name="M:System.Index.GetOffset(System.Int32)">
+            <summary>Calculate the offset from the start using the giving collection length.</summary>
+            <param name="length">The length of the collection that the Index will be used with. length has to be a positive value</param>
+            <remarks>
+            For performance reason, we don't validate the input length parameter and the returned offset value against negative values.
+            we don't validate either the returned offset is greater than the input length.
+            It is expected Index will be used with collections which always have non negative length/count. If the returned offset is negative and
+            then used to index a collection will get out of range exception which will be same affect as the validation.
+            </remarks>
+        </member>
+        <member name="M:System.Index.Equals(System.Object)">
+            <summary>Indicates whether the current Index object is equal to another object of the same type.</summary>
+            <param name="value">An object to compare with this object</param>
+        </member>
+        <member name="M:System.Index.Equals(System.Index)">
+            <summary>Indicates whether the current Index object is equal to another Index object.</summary>
+            <param name="other">An object to compare with this object</param>
+        </member>
+        <member name="M:System.Index.GetHashCode">
+            <summary>Returns the hash code for this instance.</summary>
+        </member>
+        <member name="M:System.Index.op_Implicit(System.Int32)~System.Index">
+            <summary>Converts integer number to an Index.</summary>
+        </member>
+        <member name="M:System.Index.ToString">
+            <summary>Converts the value of the current Index object to its equivalent string representation.</summary>
+        </member>
+        <member name="T:System.Range">
+            <summary>Represent a range has start and end indexes.</summary>
+            <remarks>
+            Range is used by the C# compiler to support the range syntax.
+            <code>
+            int[] someArray = new int[5] { 1, 2, 3, 4, 5 };
+            int[] subArray1 = someArray[0..2]; // { 1, 2 }
+            int[] subArray2 = someArray[1..^0]; // { 2, 3, 4, 5 }
+            </code>
+            </remarks>
+        </member>
+        <member name="P:System.Range.Start">
+            <summary>Represent the inclusive start index of the Range.</summary>
+        </member>
+        <member name="P:System.Range.End">
+            <summary>Represent the exclusive end index of the Range.</summary>
+        </member>
+        <member name="M:System.Range.#ctor(System.Index,System.Index)">
+            <summary>Construct a Range object using the start and end indexes.</summary>
+            <param name="start">Represent the inclusive start index of the range.</param>
+            <param name="end">Represent the exclusive end index of the range.</param>
+        </member>
+        <member name="M:System.Range.Equals(System.Object)">
+            <summary>Indicates whether the current Range object is equal to another object of the same type.</summary>
+            <param name="value">An object to compare with this object</param>
+        </member>
+        <member name="M:System.Range.Equals(System.Range)">
+            <summary>Indicates whether the current Range object is equal to another Range object.</summary>
+            <param name="other">An object to compare with this object</param>
+        </member>
+        <member name="M:System.Range.GetHashCode">
+            <summary>Returns the hash code for this instance.</summary>
+        </member>
+        <member name="M:System.Range.ToString">
+            <summary>Converts the value of the current Range object to its equivalent string representation.</summary>
+        </member>
+        <member name="M:System.Range.StartAt(System.Index)">
+            <summary>Create a Range object starting from start index to the end of the collection.</summary>
+        </member>
+        <member name="M:System.Range.EndAt(System.Index)">
+            <summary>Create a Range object starting from first element in the collection to the end Index.</summary>
+        </member>
+        <member name="P:System.Range.All">
+            <summary>Create a Range object starting from first element to the end.</summary>
+        </member>
+        <member name="M:System.Range.GetOffsetAndLength(System.Int32)">
+            <summary>Calculate the start offset and length of range object using a collection length.</summary>
+            <param name="length">The length of the collection that the range will be used with. length has to be a positive value.</param>
+            <remarks>
+            For performance reason, we don't validate the input length parameter against negative values.
+            It is expected Range will be used with collections which always have non negative length/count.
+            We validate the range is inside the length scope though.
+            </remarks>
+        </member>
+        <member name="T:System.Runtime.CompilerServices.AsyncMethodBuilderAttribute">
+            <summary>
+            Indicates the type of the async method builder that should be used by a language compiler to
+            build the attributed async method or to build the attributed type when used as the return type
+            of an async method.
+            </summary>
+        </member>
+        <member name="M:System.Runtime.CompilerServices.AsyncMethodBuilderAttribute.#ctor(System.Type)">
+            <summary>Initializes the <see cref="T:System.Runtime.CompilerServices.AsyncMethodBuilderAttribute"/>.</summary>
+            <param name="builderType">The <see cref="T:System.Type"/> of the associated builder.</param>
+        </member>
+        <member name="P:System.Runtime.CompilerServices.AsyncMethodBuilderAttribute.BuilderType">
+            <summary>Gets the <see cref="T:System.Type"/> of the associated builder.</summary>
+        </member>
+        <member name="T:System.Runtime.CompilerServices.CallerArgumentExpressionAttribute">
+            <summary>
+            An attribute that allows parameters to receive the expression of other parameters.
+            </summary>
+        </member>
+        <member name="M:System.Runtime.CompilerServices.CallerArgumentExpressionAttribute.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:System.Runtime.CompilerServices.CallerArgumentExpressionAttribute"/> class.
+            </summary>
+            <param name="parameterName">The condition parameter value.</param>
+        </member>
+        <member name="P:System.Runtime.CompilerServices.CallerArgumentExpressionAttribute.ParameterName">
+            <summary>
+            Gets the parameter name the expression is retrieved from.
+            </summary>
+        </member>
+        <member name="M:System.Runtime.CompilerServices.CollectionBuilderAttribute.#ctor(System.Type,System.String)">
+            <summary>
+            Initialize the attribute to refer to the <paramref name="methodName"/> method on the <paramref name="builderType"/> type.
+            </summary>
+            <param name="builderType">The type of the builder to use to construct the collection.</param>
+            <param name="methodName">The name of the method on the builder to use to construct the collection.</param>
+            <remarks>
+            <paramref name="methodName"/> must refer to a static method that accepts a single parameter of
+            type <see cref="T:System.ReadOnlySpan`1"/> and returns an instance of the collection being built containing
+            a copy of the data from that span.  In future releases of .NET, additional patterns may be supported.
+            </remarks>
+        </member>
+        <member name="P:System.Runtime.CompilerServices.CollectionBuilderAttribute.BuilderType">
+            <summary>
+            Gets the type of the builder to use to construct the collection.
+            </summary>
+        </member>
+        <member name="P:System.Runtime.CompilerServices.CollectionBuilderAttribute.MethodName">
+            <summary>
+            Gets the name of the method on the builder to use to construct the collection.
+            </summary>
+            <remarks>
+            This should match the metadata name of the target method.
+            For example, this might be ".ctor" if targeting the type's constructor.
+            </remarks>
+        </member>
+        <member name="T:System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute">
+            <summary>
+            Indicates that compiler support for a particular feature is required for the location where this attribute is applied.
+            </summary>
+        </member>
+        <member name="M:System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute.#ctor(System.String)">
+            <summary>
+            Creates a new instance of the <see cref="T:System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute"/> type.
+            </summary>
+            <param name="featureName">The name of the feature to indicate.</param>
+        </member>
+        <member name="P:System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute.FeatureName">
+            <summary>
+            The name of the compiler feature.
+            </summary>
+        </member>
+        <member name="P:System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute.IsOptional">
+            <summary>
+            If true, the compiler can choose to allow access to the location where this attribute is applied if it does not understand <see cref="P:System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute.FeatureName"/>.
+            </summary>
+        </member>
+        <member name="F:System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute.RefStructs">
+            <summary>
+            The <see cref="P:System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute.FeatureName"/> used for the ref structs C# feature.
+            </summary>
+        </member>
+        <member name="F:System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute.RequiredMembers">
+            <summary>
+            The <see cref="P:System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute.FeatureName"/> used for the required members C# feature.
+            </summary>
+        </member>
+        <member name="T:System.Runtime.CompilerServices.InterpolatedStringHandlerArgumentAttribute">
+            <summary>
+            Indicates which arguments to a method involving an interpolated string handler should be passed to that handler.
+            </summary>
+        </member>
+        <member name="M:System.Runtime.CompilerServices.InterpolatedStringHandlerArgumentAttribute.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:System.Runtime.CompilerServices.InterpolatedStringHandlerArgumentAttribute"/> class.
+            </summary>
+            <param name="argument">The name of the argument that should be passed to the handler.</param>
+            <remarks><see langword="null"/> may be used as the name of the receiver in an instance method.</remarks>
+        </member>
+        <member name="M:System.Runtime.CompilerServices.InterpolatedStringHandlerArgumentAttribute.#ctor(System.String[])">
+            <summary>
+            Initializes a new instance of the <see cref="T:System.Runtime.CompilerServices.InterpolatedStringHandlerArgumentAttribute"/> class.
+            </summary>
+            <param name="arguments">The names of the arguments that should be passed to the handler.</param>
+            <remarks><see langword="null"/> may be used as the name of the receiver in an instance method.</remarks>
+        </member>
+        <member name="P:System.Runtime.CompilerServices.InterpolatedStringHandlerArgumentAttribute.Arguments">
+            <summary>
+            Gets the names of the arguments that should be passed to the handler.
+            </summary>
+            <remarks><see langword="null"/> may be used as the name of the receiver in an instance method.</remarks>
+        </member>
+        <member name="T:System.Runtime.CompilerServices.InterpolatedStringHandlerAttribute">
+            <summary>
+            Indicates the attributed type is to be used as an interpolated string handler.
+            </summary>
+        </member>
+        <member name="T:System.Runtime.CompilerServices.IsExternalInit">
+            <summary>
+            Reserved to be used by the compiler for tracking metadata.
+            This class should not be used by developers in source code.
+            </summary>
+        </member>
+        <member name="T:System.Runtime.CompilerServices.ModuleInitializerAttribute">
+             <summary>
+             Used to indicate to the compiler that a method should be called
+             in its containing module's initializer.
+             </summary>
+             <remarks>
+             When one or more valid methods
+             with this attribute are found in a compilation, the compiler will
+             emit a module initializer which calls each of the attributed methods.
+            
+             Certain requirements are imposed on any method targeted with this attribute:
+             - The method must be `static`.
+             - The method must be an ordinary member method, as opposed to a property accessor, constructor, local function, etc.
+             - The method must be parameterless.
+             - The method must return `void`.
+             - The method must not be generic or be contained in a generic type.
+             - The method's effective accessibility must be `internal` or `public`.
+            
+             The specification for module initializers in the .NET runtime can be found here:
+             https://github.com/dotnet/runtime/blob/main/docs/design/specs/Ecma-335-Augments.md#module-initializer
+             </remarks>
+        </member>
+        <member name="T:System.Runtime.CompilerServices.OverloadResolutionPriorityAttribute">
+            <summary>
+            Specifies the priority of a member in overload resolution. When unspecified, the default priority is 0.
+            </summary>
+        </member>
+        <member name="M:System.Runtime.CompilerServices.OverloadResolutionPriorityAttribute.#ctor(System.Int32)">
+            <summary>
+            Initializes a new instance of the <see cref="T:System.Runtime.CompilerServices.OverloadResolutionPriorityAttribute"/> class.
+            </summary>
+            <param name="priority">The priority of the attributed member. Higher numbers are prioritized, lower numbers are deprioritized. 0 is the default if no attribute is present.</param>
+        </member>
+        <member name="P:System.Runtime.CompilerServices.OverloadResolutionPriorityAttribute.Priority">
+            <summary>
+            The priority of the member.
+            </summary>
+        </member>
+        <member name="T:System.Runtime.CompilerServices.ParamCollectionAttribute">
+            <summary>
+            Indicates that a method will allow a variable number of arguments in its invocation.
+            </summary>
+        </member>
+        <member name="T:System.Runtime.CompilerServices.RequiredMemberAttribute">
+            <summary>
+            Specifies that a type has required members or that a member is required.
+            </summary>
+        </member>
+        <member name="T:System.Runtime.CompilerServices.RequiresLocationAttribute">
+            <summary>
+            Reserved for use by a compiler for tracking metadata.
+            This attribute should not be used by developers in source code.
+            </summary>
+        </member>
+        <member name="T:System.Runtime.CompilerServices.SkipLocalsInitAttribute">
+            <summary>
+            Used to indicate to the compiler that the <c>.locals init</c> flag should not be set in method headers.
+            </summary>
+        </member>
+        <member name="M:System.Runtime.Versioning.RequiresPreviewFeaturesAttribute.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:System.Runtime.Versioning.RequiresPreviewFeaturesAttribute"/> class.
+            </summary>
+        </member>
+        <member name="M:System.Runtime.Versioning.RequiresPreviewFeaturesAttribute.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:System.Runtime.Versioning.RequiresPreviewFeaturesAttribute"/> class with the specified message.
+            </summary>
+            <param name="message">An optional message associated with this attribute instance.</param>
+        </member>
+        <member name="P:System.Runtime.Versioning.RequiresPreviewFeaturesAttribute.Message">
+            <summary>
+            Returns the optional message associated with this attribute instance.
+            </summary>
+        </member>
+        <member name="P:System.Runtime.Versioning.RequiresPreviewFeaturesAttribute.Url">
+            <summary>
+            Returns the optional URL associated with this attribute instance.
+            </summary>
+        </member>
+    </members>
+</doc>
