@@ -18,9 +18,9 @@ public sealed class DeserializationTests
         {
             var splat = cloud[i];
 
-            Assert.AreNotEqual(Vector3.Zero, splat.Position);
-            Assert.AreNotEqual(Quaternion.Zero, splat.Rotation);
-            Assert.AreNotEqual(Vector3.Zero, splat.Scale);
+            Assert.AreNotEqual(Vector3.Zero, splat.Position, $"Zero position at index {i}");
+            Assert.AreNotEqual(Quaternion.Zero, splat.Rotation, $"Zero rotation at index {i}");
+            Assert.AreNotEqual(Vector3.Zero, splat.Scale, $"Zero scale at index {i}");
         }
     }
 }
