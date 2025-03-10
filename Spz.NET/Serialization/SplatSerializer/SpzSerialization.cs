@@ -44,13 +44,27 @@ public static partial class SplatSerializer
         Span<QuantizedQuat> rotSpan = rotations.Span;
         Span<byte> harmonicSpan = harmonics.Span;
 
-        reader.Read(positions.Bytes);
-        reader.Read(alphas.Bytes);
-        reader.Read(colors.Bytes);
-        reader.Read(scales.Bytes);
-        reader.Read(rotations.Bytes);
-        reader.Read(harmonics.Bytes);
+        void ReadAll(Span<byte> buffer)
+        {
+            var toRead = buffer.Length;
 
+            while (toRead > 0)
+            {
+                int read = reader.Read(buffer.Slice(buffer.Length - toRead));
+
+                if (read == 0)
+                    throw new EndOfStreamException("Unexpected end of stream");
+
+                toRead -= read;
+            }
+        }
+
+        ReadAll(positions.Bytes);
+        ReadAll(alphas.Bytes);
+        ReadAll(colors.Bytes);
+        ReadAll(scales.Bytes);
+        ReadAll(rotations.Bytes);
+        ReadAll(harmonics.Bytes);
 
         int i = count;
         while (i-- > 0)

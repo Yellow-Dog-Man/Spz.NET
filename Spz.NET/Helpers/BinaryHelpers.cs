@@ -52,14 +52,16 @@ public static class BinaryHelpers
 
 
     // These read and write helpers were basically just lifted from the .NET source and backported. All my homies love spans.
-    public static void Read(this BinaryReader reader, Span<byte> buffer)
+    public static int Read(this BinaryReader reader, Span<byte> buffer)
     {
         byte[] array = ArrayPool<byte>.Shared.Rent(buffer.Length);
 
         try
         {
-            reader.Read(array, 0, buffer.Length);
-            array.AsSpan()[..buffer.Length].CopyTo(buffer);
+            int read = reader.Read(array, 0, buffer.Length);
+            array.AsSpan()[..read].CopyTo(buffer);
+
+            return read;
         }
         finally
         {
