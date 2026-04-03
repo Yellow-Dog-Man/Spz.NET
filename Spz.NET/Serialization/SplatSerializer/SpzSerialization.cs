@@ -27,7 +27,8 @@ public static partial class SplatSerializer
         int count = (int)header.NumPoints;
         int shDim = SplatMathHelpers.DimForDegree(header.ShDegree);
         int shCount = shDim * 3;
-        GaussianCloud cloud = new(count, shDim, header.Flags);
+        int fractionalBits = header.FractionalBits > 0 ? header.FractionalBits : 12;
+        GaussianCloud cloud = new(count, shDim, header.Flags, fractionalBits);
 
 
         using QuickArray<FixedVector3> positions = new(count);
@@ -73,7 +74,7 @@ public static partial class SplatSerializer
             harmonicSpan.Unquantize(out GaussianHarmonics gaussianHarmonics, offset, shCount);
 
             cloud[i] = new(
-                posSpan[i].ToVector3(12),
+                posSpan[i].ToVector3(fractionalBits),
                 scaleSpan[i],
                 rotSpan[i],
                 alphaSpan[i],
@@ -109,23 +110,23 @@ public static partial class SplatSerializer
     /// <param name="stream">The stream to serialize this compressed gaussian cloud to.</param>
     public static void ToSpz(this GaussianCloud gaussians, Stream stream)
     {
+        int count = gaussians.Count;
+        int shCount = gaussians.ShDim * 3;
+        int fractionalBits = gaussians.FractionalBits > 0 ? gaussians.FractionalBits : 12;
+
         SpzHeader header = new(
             SpzHeader.MAGIC,
             SpzHeader.VERSION,
             (uint)gaussians.Count,
             (byte)gaussians.ShDegree,
-            (byte)gaussians.FractionalBits,
+            (byte)fractionalBits,
             gaussians.Flags
         );
-
 
         using GZipStream zipper = new(stream, CompressionLevel.Optimal);
         using BinaryWriter writer = new(zipper);
 
         header.WriteTo(writer);
-
-        int count = gaussians.Count;
-        int shCount = gaussians.ShDim * 3;
 
         using QuickArray<FixedVector3> positions = new(count);
         using QuickArray<QuantizedAlpha> alphas = new(count);
@@ -148,7 +149,7 @@ public static partial class SplatSerializer
         {
             int offset = i * shCount;
             Gaussian cur = gaussians[i];
-            posSpan[i] = cur.Position.ToFixed(12);
+            posSpan[i] = cur.Position.ToFixed(fractionalBits);
             alphaSpan[i] = cur.Alpha;
             colorSpan[i] = cur.Color;
             scaleSpan[i] = cur.Scale;

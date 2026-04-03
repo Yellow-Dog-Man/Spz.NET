@@ -17,7 +17,7 @@ namespace Spz.NET;
 /// <param name="capacity">The capacity of the cloud.</param>
 /// <param name="shDim">The dimensions of each gaussian's spherical harmonics.</param>
 /// <param name="flags">The collection flags.</param>
-public class GaussianCloud(int capacity, int shDim, GaussianFlags flags = 0) : GaussianCollection(capacity, shDim, flags)
+public class GaussianCloud(int capacity, int shDim, GaussianFlags flags = 0, int fractionalBits = 12) : GaussianCollection(capacity, shDim, flags, fractionalBits)
 {
     /// <inheritdoc/>
     public override bool Compressed => false;
