@@ -1,8 +1,11 @@
 # Spz.NET: A C# Implementation of SPZ (de)serialization.
 
 > [!WARNING]
+> **Deprecation notice!**
+>
 > Niantic labs has made a vast number of changes to [their library](https://github.com/nianticlabs/spz) which would need to be replicated here. As much as I love having a 100% C# library, it's unfortunately not a wise use of developer time to play catch-up; especially since it seems their development moves quite rapidly.
-> You're likely to eventually see another repo from us which provides equivalent functionality via P/Invoke bindings to Niantic's native SPZ library.
+>
+> You'll eventually see another repo from us which provides equivalent functionality via P/Invoke bindings to Niantic's native SPZ library.
 
 This library provides a completely native implementation of Niantic Labs' SPZ format, of which the original can be found [here](https://github.com/nianticlabs/spz).
 
